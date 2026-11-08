@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>숫자심리대결(1-9) - 단체 대전 및 TOP 10 랭킹</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-gold: #ffd700;
+            --black-team: #2a2a2a;
+            --white-team: #e0e0e0;
+            --black-glow: #00e5ff;
+            --white-glow: #ff4081;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            max-height: 840px;
+            background: #18181c;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            position: relative;
+            border: 1px solid #333;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(18, 18, 18, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 2rem;
+            color: var(--accent-gold);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #25252b;
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, #ffd700, #ffa500);
+            color: #121212;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        /* 랭킹 컨테이너 (상위 10위까지만 표시) */
+        .ranking-container {
+            width: 100%;
+            max-height: 250px;
+            overflow-y: auto;
+            background: #222228;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+            text-align: left;
+            padding: 10px;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #2a2a32;
+            font-size: 0.9rem;
+        }
+
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222228;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+
+        .player-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .team-badge {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+            border: 1px solid #666;
+        }
+        .team-badge.black { background: #000; border-color: #555; }
+        .team-badge.white { background: #fff; }
+
+        .opponent-area {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .cards-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .card-back {
+            width: 36px;
+            height: 52px;
+            background: linear-gradient(135deg, #2c2c35, #1a1a20);
+            border: 1px solid #444;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #555;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .card-back.used {
+            opacity: 0.2;
+            background: #111;
+            border-color: #222;
+        }
+
+        .center-arena {
+            background: #202026;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            border: 1px solid #2e2e38;
+        }
+
+        .round-indicator {
+            font-size: 0.85rem;
+            color: var(--accent-gold);
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .led-board {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .led {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #151518;
+            border: 2px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.65rem;
+            color: #555;
+            transition: 0.4s;
+        }
+
+        .led.black-win {
+            background: #00e5ff;
+            border-color: #00e5ff;
+            box-shadow: 0 0 10px #00e5ff;
+            color: #000;
+        }
+
+        .led.white-win {
+            background: #ff4081;
+            border-color: #ff4081;
+            box-shadow: 0 0 10px #ff4081;
+            color: #fff;
+        }
+
+        .led.draw {
+            background: #777;
+            border-color: #aaa;
+        }
+
+        .status-message {
+            font-size: 1.2rem;
+            font-weight: bold;
+            min-height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .timer-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            margin-top: 15px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .timer-progress {
+            width: 100%;
+            height: 100%;
+            background: var(--accent-gold);
+            transition: width 1s linear;
+        }
+
+        .my-area {
+            text-align: center;
+        }
+
+        .my-cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .card {
+            aspect-ratio: 1 / 1.4;
+            background: linear-gradient(135deg, #2a2a35, #1f1f26);
+            border: 2px solid #444;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        .card:hover:not(.disabled) {
+            transform: translateY(-5px);
+            border-color: var(--accent-gold);
+            box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .card.selected {
+            border-color: #00e5ff;
+            background: #1a3540;
+            transform: translateY(-8px);
+        }
+
+        .card.disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            border-color: #222;
+            background: #141416;
+            color: #555;
+        }
+
+        .result-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+        .result-title.win { color: #00e5ff; text-shadow: 0 0 15px rgba(0,229,255,0.5); }
+        .result-title.lose { color: #ff4081; text-shadow: 0 0 15px rgba(255,64,129,0.5); }
+        .result-title.draw { color: #ffd700; }
+
+        .rematch-info {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-top: 8px;
+        }
+
+        @keyframes flash {
+            0% { background-color: rgba(255, 215, 0, 0.8); }
+            100% { background-color: rgba(18, 18, 18, 0.95); }
+        }
+        .flash-effect {
+            animation: flash 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <!-- 1. 로비 / 단체 방 입장 화면 -->
+    <div id="lobby-overlay" class="overlay">
+        <h1 class="title">숫자심리대결(1-9)</h1>
+        <p class="subtitle">우리 반 통합 대기실 (최대 60명)</p>
+
+        <div class="input-group">
+            <input type="text" id="nickname-input" placeholder="닉네임 입력 (예: 홍길동)" maxlength="8">
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="room-code-input" placeholder="반 코드 입력 (예: 6학년3반)" maxlength="10">
+        </div>
+
+        <button class="btn" onclick="enterClassLobby()">대기실 입장하기</button>
+        <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444;" onclick="openRankingModalFromLobby()">🏆 우리 반 TOP 10 보기</button>
+    </div>
+
+    <!-- 로비 랭킹 확인 팝업 (TOP 10) -->
+    <div id="lobby-ranking-overlay" class="overlay" style="display: none;">
+        <h2 class="title" style="font-size: 1.5rem;">🏆 우리 반 TOP 10 순위표</h2>
+        <div class="ranking-container" id="lobby-ranking-list">
+            <!-- TOP 10 랭킹 항목이 동적으로 들어옴 -->
+        </div>
+        <button class="btn" onclick="closeLobbyRankingModal()">돌아가기</button>
+    </div>
+
+    <!-- 대기실 대기 상태 팝업 -->
+    <div id="waiting-overlay" class="overlay" style="display: none;">
+        <h2 class="title" style="font-size: 1.5rem;">매칭 대기 중...</h2>
+        <p id="waiting-status-text" class="subtitle" style="margin-top: 10px;">다른 상대를 찾는 중입니다. 잠시만 기다려주세요!</p>
+        <div style="font-size: 2rem; margin: 15px 0;">⏳</div>
+        <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444; margin-bottom: 5px;" onclick="openGameRankingModal()">🏆 TOP 10 순위표 확인</button>
+        <button class="btn" style="background:#444; color:#fff; margin-top:0;" onclick="leaveToLobby()">나가기</button>
+    </div>
+
+    <!-- 게임 중/결과창 랭킹 모달 (TOP 10) -->
+    <div id="game-ranking-overlay" class="overlay" style="display: none;">
+        <h2 class="title" style="font-size: 1.5rem;">🏆 우리 반 TOP 10 순위표</h2>
+        <div class="ranking-container" id="game-ranking-list">
+            <!-- TOP 10 랭킹 항목이 동적으로 들어옴 -->
+        </div>
+        <button class="btn" onclick="closeGameRankingModal()">닫기</button>
+    </div>
+
+    <!-- 2. 게임 결과 및 무한 매칭 팝업 -->
+    <div id="result-overlay" class="overlay" style="display: none;">
+        <div id="result-text" class="result-title">VICTORY</div>
+        <p id="result-detail" style="color:#ccc; margin-bottom: 20px;">5승 1무 3패로 승리했습니다!</p>
+        
+        <button id="rematch-btn" class="btn" onclick="requestRematch()">재대결 신청 (0/3)</button>
+        <button class="btn" style="background: linear-gradient(135deg, #00e5ff, #00838f); color:#000;" onclick="findNewMatch()">새로운 상대 매칭하기</button>
+        <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444;" onclick="openGameRankingModal()">🏆 TOP 10 순위표 확인</button>
+        <div id="rematch-status" class="rematch-info">상대방의 응답을 기다리는 중...</div>
+    </div>
+
+    <!-- 3. 상단 플레이어 프로필 & 전적 정보 -->
+    <div class="header">
+        <div class="player-profile">
+            <span class="team-badge black" id="my-team-badge"></span>
+            <strong id="my-name-display">나</strong>
+            <span style="font-size:0.75rem; color:#888;" id="my-record">(0승 0패)</span>
+        </div>
+        <div style="color:var(--accent-gold); font-weight:bold; cursor:pointer;" id="room-display" onclick="openGameRankingModal()">반: - (TOP10)</div>
+        <div class="player-profile">
+            <strong id="opp-name-display">상대방</strong>
+            <span class="team-badge white" id="opp-team-badge"></span>
+        </div>
+    </div>
+
+    <!-- 4. 상대방 영역 (상단) -->
+    <div class="opponent-area">
+        <div style="font-size:0.8rem; color:#aaa;" id="opp-status-text">상대방 고민 중...</div>
+        <div class="cards-row" id="opp-cards-row">
+            <!-- 상대 카드 9장 (뒷면) -->
+        </div>
+    </div>
+
+    <!-- 5. 중앙 승패 전광판 (LED 9개) -->
+    <div class="center-arena" id="arena-box">
+        <div class="round-indicator" id="round-title">ROUND 1 / 9</div>
+        
+        <div class="led-board" id="led-board">
+            <!-- LED 9개 생성됨 -->
+        </div>
+
+        <div class="status-message" id="status-msg">카드를 선택해 주세요</div>
+
+        <div class="timer-bar">
+            <div class="timer-progress" id="timer-progress"></div>
+        </div>
+    </div>
+
+    <!-- 6. 내 카드 패 영역 -->
+    <div class="my-area">
+        <div style="font-size:0.85rem; color:#ccc; margin-bottom:6px;">내 패 (1~9중 1장 선택)</div>
+        <div class="my-cards" id="my-cards-grid">
+            <!-- 1~9 카드 버튼 생성됨 -->
+        </div>
+    </div>
+</div>
+
+<script>
+    let myId = 'user_' + Math.random().toString(36).substr(2, 9);
+    let myNickname = "";
+    let roomCode = "";
+    let channel = null;
+
+    let myTeam = ""; 
+    let myRecord = { win: 0, lose: 0 };
+    let rematchCount = 0;
+    let matchId = null; 
+    let opponentId = null;
+
+    let currentRound = 1;
+    let myCardsUsed = Array(10).fill(false); 
+    let oppCardsLeft = 9;
+    
+    let mySelectedCard = null;
+    let oppSubmitted = false;
+    let oppCardValue = null; 
+    
+    let roundResults = []; 
+    let rematchRequested = false;
+    let timerInterval = null;
+    let isMatching = false;
+    let pastOpponents = new Set(); 
+
+    let classRankings = {}; 
+
+    function enterClassLobby() {
+        const nickInput = document.getElementById('nickname-input').value.trim();
+        const codeInput = document.getElementById('room-code-input').value.trim();
+
+        if (!nickInput || !codeInput) {
+            alert("닉네임과 반 코드를 모두 입력해 주세요!");
+            return;
+        }
+
+        myNickname = nickInput;
+        roomCode = codeInput;
+
+        document.getElementById('my-name-display').innerText = myNickname;
+        document.getElementById('room-display').innerText = `${roomCode} (TOP10)`;
+        document.getElementById('lobby-overlay').style.display = 'none';
+
+        if (channel) channel.close();
+        channel = new BroadcastChannel(`school_class_${roomCode}`);
+        channel.onmessage = handleNetworkMessage;
+
+        classRankings[myId] = { nickname: myNickname, win: 0, lose: 0 };
+        broadcastRankingUpdate();
+
+        startQueue();
+    }
+
+    function broadcastRankingUpdate() {
+        if (!channel) return;
+        classRankings[myId] = { nickname: myNickname, win: myRecord.win, lose: myRecord.lose };
+        channel.postMessage({
+            type: 'RANKING_SYNC',
+            senderId: myId,
+            rankData: classRankings[myId]
+        });
+    }
+
+    function startQueue() {
+        isMatching = true;
+        matchId = null;
+        opponentId = null;
+        rematchCount = 0;
+        rematchRequested = false;
+
+        document.getElementById('result-overlay').style.display = 'none';
+        document.getElementById('waiting-overlay').style.display = 'flex';
+        document.getElementById('waiting-status-text').innerText = "대기 중인 상대와 매칭을 시도합니다...";
+
+        broadcastMatchSignal('LOOKING_FOR_MATCH', { id: myId, nickname: myNickname, past: Array(pastOpponents) });
+    }
+
+    function broadcastMatchSignal(type, data) {
+        if (channel) {
+            channel.postMessage({ type, senderId: myId, ...data });
+        }
+    }
+
+    function handleNetworkMessage(event) {
+        const msg = event.data;
+        
+        if (msg.type === 'RANKING_SYNC') {
+            if (msg.senderId && msg.rankData) {
+                classRankings[msg.senderId] = msg.rankData;
+            }
+            return;
+        }
+
+        if (msg.senderId === myId) return;
+
+        switch (msg.type) {
+            case 'LOOKING_FOR_MATCH':
+                if (isMatching && !matchId) {
+                    // 안 해본 사람 우선순위 매칭 로직 (이전 상대방 목록에 포함되지 않은 사람 우선)
+                    const senderPast = msg.past || [];
+                    const isNotPastOpponent = !pastOpponents.has(msg.id);
+
+                    // ID 비교 주도권 조건에 안 한 사람 우선순위 가중치 반영
+                    if (myId > msg.senderId) {
+                        matchId = 'match_' + Date.now();
+                        opponentId = msg.id;
+                        pastOpponents.add(opponentId);
+
+                        broadcastMatchSignal('MATCH_ACCEPTED', { 
+                            matchId: matchId, 
+                            hostId: myId, 
+                            hostNickname: myNickname,
+                            guestId: msg.id,
+                            guestNickname: msg.nickname
+                        });
+
+                        initGame('black', msg.nickname);
+                    }
+                }
+                break;
+
+            case 'MATCH_ACCEPTED':
+                if (isMatching && msg.guestId === myId) {
+                    matchId = msg.matchId;
+                    opponentId = msg.hostId;
+                    pastOpponents.add(opponentId);
+
+                    initGame('white', msg.hostNickname);
+                }
+                break;
+
+            case 'SUBMIT_CARD':
+                if (msg.matchId === matchId) {
+                    oppSubmitted = true;
+                    oppCardValue = msg.cardValue;
+                    document.getElementById('opp-status-text').innerText = "상대방 제출 완료!";
+                    checkRoundEnd();
+                }
+                break;
+
+            case 'REMATCH_REQUEST':
+                if (msg.matchId === matchId) {
+                    if (rematchRequested) {
+                        startRematch();
+                    } else {
+                        document.getElementById('rematch-status').innerText = "상대방이 재대결을 요청했습니다!";
+                    }
+                }
+                break;
+
+            case 'LEAVE_MATCH':
+                if (msg.matchId === matchId) {
+                    alert("상대방이 게임을 나갔습니다.");
+                    startQueue();
+                }
+                break;
+        }
+    }
+
+    function initGame(team, oppName) {
+        isMatching = false;
+        myTeam = team;
+        document.getElementById('opp-name-display').innerText = oppName;
+        document.getElementById('waiting-overlay').style.display = 'none';
+
+        const myBadge = document.getElementById('my-team-badge');
+        const oppBadge = document.getElementById('opp-team-badge');
+        if (myTeam === 'black') {
+            myBadge.className = 'team-badge black';
+            oppBadge.className = 'team-badge white';
+        } else {
+            myBadge.className = 'team-badge white';
+            oppBadge.className = 'team-badge black';
+        }
+
+        resetBoard();
+    }
+
+    function resetBoard() {
+        currentRound = 1;
+        myCardsUsed.fill(false);
+        oppCardsLeft = 9;
+        roundResults = [];
+        mySelectedCard = null;
+        oppSubmitted = false;
+        oppCardValue = null;
+        rematchRequested = false;
+
+        document.getElementById('result-overlay').style.display = 'none';
+        document.getElementById('status-msg').innerText = "카드를 선택해 주세요";
+        document.getElementById('opp-status-text').innerText = "상대방 고민 중...";
+        
+        renderCards();
+        renderLEDs();
+        startTimer();
+    }
+
+    function renderCards() {
+        const grid = document.getElementById('my-cards-grid');
+        grid.innerHTML = '';
+        for (let i = 1; i <= 9; i++) {
+            const btn = document.createElement('div');
+            btn.className = `card ${myCardsUsed[i] ? 'disabled' : ''} ${mySelectedCard === i ? 'selected' : ''}`;
+            btn.innerText = i;
+            if (!myCardsUsed[i]) {
+                btn.onclick = () => selectCard(i);
+            }
+            grid.appendChild(btn);
+        }
+
+        const oppRow = document.getElementById('opp-cards-row');
+        oppRow.innerHTML = '';
+        for (let i = 0; i < 9; i++) {
+            const cardBack = document.createElement('div');
+            cardBack.className = `card-back ${i >= oppCardsLeft ? 'used' : ''}`;
+            cardBack.innerText = "9";
+            oppRow.appendChild(cardBack);
+        }
+    }
+
+    function renderLEDs() {
+        const board = document.getElementById('led-board');
+        board.innerHTML = '';
+        for (let i = 1; i <= 9; i++) {
+            const led = document.createElement('div');
+            let statusClass = '';
+            if (roundResults[i - 1]) {
+                statusClass = roundResults[i - 1] === 'black' ? 'black-win' : 
+                             (roundResults[i - 1] === 'white' ? 'white-win' : 'draw');
+            }
+            led.className = `led ${statusClass}`;
+            led.innerText = i;
+            board.appendChild(led);
+        }
+        document.getElementById('round-title').innerText = `ROUND ${currentRound} / 9`;
+    }
+
+    function selectCard(num) {
+        if (mySelectedCard !== null) return;
+
+        mySelectedCard = num;
+        myCardsUsed[num] = true;
+        renderCards();
+
+        document.getElementById('status-msg').innerText = "상대방 대기 중...";
+        broadcastMatchSignal('SUBMIT_CARD', { matchId: matchId, cardValue: num });
+        checkRoundEnd();
+    }
+
+    function checkRoundEnd() {
+        if (mySelectedCard !== null && oppSubmitted) {
+            clearInterval(timerInterval);
+
+            const myVal = mySelectedCard;
+            const oppVal = oppCardValue;
+            let winnerTeam = null;
+
+            // 1은 9를 잡는 변칙 규칙
+            if (myVal === 1 && oppVal === 9) {
+                winnerTeam = myTeam;
+                triggerSpecialEffect();
+            } else if (myVal === 9 && oppVal === 1) {
+                winnerTeam = (myTeam === 'black') ? 'white' : 'black';
+                triggerSpecialEffect();
+            } else if (myVal > oppVal) {
+                winnerTeam = myTeam;
+            } else if (oppVal > myVal) {
+                winnerTeam = (myTeam === 'black') ? 'white' : 'black';
+            } else {
+                winnerTeam = 'draw';
+            }
+
+            roundResults.push(winnerTeam);
+            oppCardsLeft--;
+
+            if (winnerTeam === myTeam) {
+                document.getElementById('status-msg').innerText = "🎉 이번 라운드 승리!";
+            } else if (winnerTeam === 'draw') {
+                document.getElementById('status-msg').innerText = "🤝 무승부!";
+            } else {
+                document.getElementById('status-msg').innerText = "💀 이번 라운드 패배...";
+            }
+
+            renderLEDs();
+
+            setTimeout(() => {
+                if (currentRound < 9) {
+                    currentRound++;
+                    mySelectedCard = null;
+                    oppSubmitted = false;
+                    oppCardValue = null;
+                    document.getElementById('status-msg').innerText = "카드를 선택해 주세요";
+                    document.getElementById('opp-status-text').innerText = "상대방 고민 중...";
+                    renderCards();
+                    renderLEDs();
+                    startTimer();
+                } else {
+                    endGame();
+                }
+            }, 1800);
+        }
+    }
+
+    function triggerSpecialEffect() {
+        const box = document.getElementById('arena-box');
+        box.classList.add('flash-effect');
+        document.getElementById('status-msg').innerText = "⚡ 1이 9를 잡았습니다! (대역전)";
+        setTimeout(() => box.classList.remove('flash-effect'), 600);
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        let timeLeft = 15;
+        const progress = document.getElementById('timer-progress');
+        progress.style.width = '100%';
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            progress.style.width = `${(timeLeft / 15) * 100}%`;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if (mySelectedCard === null) {
+                    for (let i = 1; i <= 9; i++) {
+                        if (!myCardsUsed[i]) {
+                            selectCard(i);
+                            break;
+                        }
+                    }
+                }
+            }
+        }, 1000);
+    }
+
+    function endGame() {
+        let myWins = 0;
+        let oppWins = 0;
+        let draws = 0;
+
+        roundResults.forEach(res => {
+            if (res === myTeam) myWins++;
+            else if (res === 'draw') draws++;
+            else oppWins++;
+        });
+
+        const overlay = document.getElementById('result-overlay');
+        const title = document.getElementById('result-text');
+        const detail = document.getElementById('result-detail');
+
+        if (myWins > oppWins) {
+            title.innerText = "VICTORY";
+            title.className = "result-title win";
+            myRecord.win++;
+        } else if (oppWins > myWins) {
+            title.innerText = "DEFEAT";
+            title.className = "result-title lose";
+            myRecord.lose++;
+        } else {
+            title.innerText = "DRAW";
+            title.className = "result-title draw";
+        }
+
+        document.getElementById('my-record').innerText = `(${myRecord.win}승 ${myRecord.lose}패)`;
+        detail.innerText = `최종 성적: ${myWins}승 ${draws}무 ${oppWins}패`;
+
+        broadcastRankingUpdate();
+
+        const rematchBtn = document.getElementById('rematch-btn');
+        rematchBtn.innerText = `재대결 신청 (${rematchCount}/3)`;
+        if (rematchCount >= 3) {
+            rematchBtn.disabled = true;
+            rematchBtn.style.opacity = '0.5';
+            document.getElementById('rematch-status').innerText = "최대 재대결 횟수(3회)를 초과했습니다.";
+        } else {
+            rematchBtn.disabled = false;
+            rematchBtn.style.opacity = '1';
+            document.getElementById('rematch-status').innerText = "";
+        }
+
+        overlay.style.display = 'flex';
+    }
+
+    function requestRematch() {
+        if (rematchCount >= 3) return;
+
+        rematchRequested = true;
+        document.getElementById('rematch-status').innerText = "상대방의 수락을 기다리는 중...";
+        broadcastMatchSignal('REMATCH_REQUEST', { matchId: matchId });
+    }
+
+    function startRematch() {
+        rematchCount++;
+        resetBoard();
+    }
+
+    function findNewMatch() {
+        broadcastMatchSignal('LEAVE_MATCH', { matchId: matchId });
+        startQueue();
+    }
+
+    // --- 상위 10위까지만 표시하는 랭킹 렌더링 함수 ---
+    function renderRankingList(containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        const sortedPlayers = Object.values(classRankings).sort((a, b) => b.win - a.win);
+
+        if (sortedPlayers.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#888; padding:15px;">등록된 전적이 없습니다.</div>';
+            return;
+        }
+
+        // 상위 10명만 자르기 (slice(0, 10))
+        const top10Players = sortedPlayers.slice(0, 10);
+
+        top10Players.forEach((p, index) => {
+            let medal = `${index + 1}위`;
+            if (index === 0) medal = '🥇 1위';
+            else if (index === 1) medal = '🥈 2위';
+            else if (index === 2) medal = '🥉 3위';
+
+            const item = document.createElement('div');
+            item.className = 'ranking-item';
+            item.innerHTML = `
+                <span><strong>${medal}</strong> ${p.nickname}</span>
+                <span style="color: var(--accent-gold);">${p.win}승 ${p.lose}패</span>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function openLobbyRankingModal() {
+        renderRankingList('lobby-ranking-list');
+        document.getElementById('lobby-ranking-overlay').style.display = 'flex';
+    }
+
+    function closeLobbyRankingModal() {
+        document.getElementById('lobby-ranking-overlay').style.display = 'none';
+    }
+
+    function openGameRankingModal() {
+        renderRankingList('game-ranking-list');
+        document.getElementById('game-ranking-overlay').style.display = 'flex';
+    }
+
+    function closeGameRankingModal() {
+        document.getElementById('game-ranking-overlay').style.display = 'none';
+    }
+
+    function leaveToLobby() {
+        if (matchId) broadcastMatchSignal('LEAVE_MATCH', { matchId: matchId });
+        if (channel) channel.close();
+        document.location.reload();
+    }
+</script>
+</body>
+</html>
