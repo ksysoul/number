@@ -119,6 +119,7 @@
             box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
         }
 
+        /* 랭킹 컨테이너 스타일 */
         .ranking-container {
             width: 100%;
             max-height: 250px;
@@ -139,6 +140,7 @@
             font-size: 0.9rem;
         }
 
+        /* 상단 플레이어 대형 프로필 바 */
         .header {
             display: flex;
             justify-content: space-between;
@@ -146,18 +148,26 @@
             background: #222228;
             padding: 12px 16px;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
 
         .player-profile {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
+        }
+
+        .big-nickname {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255,255,255,0.2);
         }
 
         .team-badge {
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             display: inline-block;
             border: 1px solid #666;
@@ -165,21 +175,22 @@
         .team-badge.black { background: #000; border-color: #555; }
         .team-badge.white { background: #fff; }
 
+        /* 상대방 영역 */
         .opponent-area {
             text-align: center;
-            padding: 10px 0;
+            padding: 8px 0;
         }
 
         .cards-row {
             display: flex;
             justify-content: center;
             gap: 6px;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .card-back {
-            width: 36px;
-            height: 52px;
+            width: 34px;
+            height: 48px;
             background: linear-gradient(135deg, #2c2c35, #1a1a20);
             border: 1px solid #444;
             border-radius: 6px;
@@ -197,10 +208,11 @@
             border-color: #222;
         }
 
+        /* 중앙 LED 전광판 (크기 확대) */
         .center-arena {
             background: #202026;
             border-radius: 16px;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             position: relative;
             border: 1px solid #2e2e38;
@@ -209,39 +221,54 @@
         .round-indicator {
             font-size: 0.85rem;
             color: var(--accent-gold);
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             letter-spacing: 1px;
         }
 
         .led-board {
             display: flex;
             justify-content: center;
-            gap: 8px;
-            margin-bottom: 20px;
+            gap: 6px;
+            margin-bottom: 12px;
         }
 
         .led {
-            width: 22px;
-            height: 22px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             background: #151518;
-            border: 2px solid #333;
+            border: 2px solid #444;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.65rem;
-            color: #555;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #666;
             transition: 0.4s;
         }
 
-        .led.black-win { background: #00e5ff; border-color: #00e5ff; box-shadow: 0 0 10px #00e5ff; color: #000; }
-        .led.white-win { background: #ff4081; border-color: #ff4081; box-shadow: 0 0 10px #ff4081; color: #fff; }
-        .led.draw { background: #777; border-color: #aaa; }
+        .led.black-win { 
+            background: #00e5ff; 
+            border-color: #00e5ff; 
+            box-shadow: 0 0 14px #00e5ff; 
+            color: #000; 
+        }
+        .led.white-win { 
+            background: #ff4081; 
+            border-color: #ff4081; 
+            box-shadow: 0 0 14px #ff4081; 
+            color: #fff; 
+        }
+        .led.draw { 
+            background: #888; 
+            border-color: #ccc; 
+            color: #222;
+        }
 
         .status-message {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            min-height: 30px;
+            min-height: 28px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -251,7 +278,7 @@
             width: 100%;
             height: 4px;
             background: #333;
-            margin-top: 15px;
+            margin-top: 10px;
             border-radius: 2px;
             overflow: hidden;
         }
@@ -263,39 +290,52 @@
             transition: width 1s linear;
         }
 
+        /* 내 패 영역 */
         .my-area { text-align: center; }
 
         .my-cards {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            margin-top: 10px;
+            gap: 6px;
+            margin-top: 8px;
         }
 
         .card {
-            aspect-ratio: 1 / 1.4;
+            aspect-ratio: 1 / 1.35;
             background: linear-gradient(135deg, #2a2a35, #1f1f26);
             border: 2px solid #444;
-            border-radius: 10px;
+            border-radius: 8px;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: #fff;
             cursor: pointer;
             transition: 0.2s;
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            position: relative;
         }
 
         .card:hover:not(.disabled) {
-            transform: translateY(-5px);
+            transform: translateY(-4px);
             border-color: var(--accent-gold);
-            box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 6px 12px rgba(255, 215, 0, 0.3);
         }
 
-        .card.selected { border-color: #00e5ff; background: #1a3540; transform: translateY(-8px); }
-        .card.disabled { opacity: 0.25; cursor: not-allowed; border-color: #222; background: #141416; color: #555; }
+        .card.selected { border-color: #00e5ff; background: #1a3540; transform: translateY(-6px); }
+        .card.disabled { opacity: 0.3; cursor: not-allowed; border-color: #222; background: #141416; color: #555; }
+
+        /* 내가 낸 패에 표시되는 작은 마크 (사용 기록) */
+        .card-history-badge {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
 
         .result-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 10px; }
         .result-title.win { color: #00e5ff; text-shadow: 0 0 15px rgba(0,229,255,0.5); }
@@ -306,7 +346,7 @@
 
         @keyframes flash {
             0% { background-color: rgba(255, 215, 0, 0.8); }
-            100% { background-color: rgba(18, 18, 18, 0.95); }
+            100% { background-color: rgba(18, 18, 18, 0.96); }
         }
         .flash-effect { animation: flash 0.6s ease-out; }
     </style>
@@ -317,7 +357,7 @@
     <!-- 1. 로비 / 방 입장 화면 -->
     <div id="lobby-overlay" class="overlay">
         <h1 class="title">숫자심리대결(1-9)</h1>
-        <p class="subtitle">실시간 크롬북 교실 대전</p>
+        <p class="subtitle">실시간 교실 대전</p>
 
         <div class="input-group">
             <input type="text" id="nickname-input" placeholder="내 닉네임 입력 (예: 홍길동)" maxlength="8">
@@ -334,8 +374,16 @@
     <div id="waiting-overlay" class="overlay" style="display: none;">
         <h2 class="title" style="font-size: 1.6rem;" id="waiting-room-title">방 대기실</h2>
         <p class="subtitle" id="waiting-status-text">상대방이 들어오기를 기다리는 중...</p>
-        <div style="font-size: 2rem; margin: 20px 0;">⏳</div>
-        <button class="btn" style="background:#444; color:#fff;" onclick="leaveRoom()">나가기</button>
+        <div style="font-size: 2rem; margin: 15px 0;">⏳</div>
+        <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444; margin-bottom: 10px;" onclick="openRoomRankingModal()">🏆 우리 방 순위표 보기</button>
+        <button class="btn" style="background:#444; color:#fff; margin-top:0;" onclick="leaveRoom()">나가기</button>
+    </div>
+
+    <!-- 우리 방 전용 랭킹 모달 -->
+    <div id="room-ranking-overlay" class="overlay" style="display: none;">
+        <h2 class="title" style="font-size: 1.5rem;">🏆 우리 방 순위표</h2>
+        <div class="ranking-container" id="room-ranking-list"></div>
+        <button class="btn" onclick="closeRoomRankingModal()">닫기</button>
     </div>
 
     <!-- 3. 게임 결과 화면 -->
@@ -344,21 +392,27 @@
         <p id="result-detail" style="color:#ccc; margin-bottom: 20px;">성적 표시</p>
         
         <button id="rematch-btn" class="btn" onclick="requestRematch()">재대결 신청 (0/3)</button>
+        <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444;" onclick="openRoomRankingModal()">🏆 우리 방 순위표 보기</button>
         <button class="btn" style="background: linear-gradient(135deg, #00e5ff, #00838f); color:#000;" onclick="leaveRoom()">방 나가기</button>
         <div id="rematch-status" class="rematch-info">상대방의 응답을 기다리는 중...</div>
     </div>
 
-    <!-- 4. 상단 플레이어 프로필 -->
+    <!-- 4. 상단 플레이어 대형 프로필 -->
     <div class="header">
         <div class="player-profile">
-            <span class="team-badge black" id="my-team-badge"></span>
-            <strong id="my-name-display">나</strong>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <span class="team-badge black" id="my-team-badge"></span>
+                <span class="big-nickname" id="my-name-display">나</span>
+            </div>
             <span style="font-size:0.75rem; color:#888;" id="my-record">(0승 0패)</span>
         </div>
-        <div style="color:var(--accent-gold); font-weight:bold;" id="room-display">ROOM: -</div>
+        <div style="color:var(--accent-gold); font-weight:bold; font-size:0.9rem;" id="room-display">ROOM: -</div>
         <div class="player-profile">
-            <strong id="opp-name-display">상대방</strong>
-            <span class="team-badge white" id="opp-team-badge"></span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <span class="big-nickname" id="opp-name-display">상대방</span>
+                <span class="team-badge white" id="opp-team-badge"></span>
+            </div>
+            <span style="font-size:0.75rem; color:#888;">상대</span>
         </div>
     </div>
 
@@ -368,7 +422,7 @@
         <div class="cards-row" id="opp-cards-row"></div>
     </div>
 
-    <!-- 6. 중앙 LED 전광판 -->
+    <!-- 6. 중앙 LED 전광판 (크기 확대) -->
     <div class="center-arena" id="arena-box">
         <div class="round-indicator" id="round-title">ROUND 1 / 9</div>
         <div class="led-board" id="led-board"></div>
@@ -376,9 +430,9 @@
         <div class="timer-bar"><div class="timer-progress" id="timer-progress"></div></div>
     </div>
 
-    <!-- 7. 내 카드 패 영역 -->
+    <!-- 7. 내 카드 패 영역 (내가 낸 패 기록 표시) -->
     <div class="my-area">
-        <div style="font-size:0.85rem; color:#ccc; margin-bottom:6px;">내 패 (1~9중 1장 선택)</div>
+        <div style="font-size:0.85rem; color:#ccc; margin-bottom:4px;">내 패 (1~9중 1장 선택)</div>
         <div class="my-cards" id="my-cards-grid"></div>
     </div>
 </div>
@@ -394,6 +448,7 @@
     let myTeam = ""; 
     let myRecord = { win: 0, lose: 0 };
     let rematchCount = 0;
+    let myUsedCardsHistory = {}; // { 카드숫자: 라운드번호 }
 
     let currentRound = 1;
     let myCardsUsed = Array(10).fill(false); 
@@ -404,9 +459,11 @@
     
     let roundResults = []; 
     let rematchRequested = false;
+    let oppRematchReady = false;
     let timerInterval = null;
 
-    // 방 들어가기 버튼 클릭 시
+    let roomRankings = {}; // 방 구성원 전적 데이터
+
     function enterRoom() {
         const nickInput = document.getElementById('nickname-input').value.trim();
         const codeInput = document.getElementById('room-code-input').value.trim();
@@ -425,37 +482,33 @@
         document.getElementById('waiting-overlay').style.display = 'flex';
         document.getElementById('waiting-room-title').innerText = `방 [${roomCode}] 대기실`;
 
-        // PeerJS를 이용해 방 코드 기반 네트워크 고유 ID 생성
-        // 먼저 들어오는 사람이 호스트(방장), 두 번째로 들어오는 사람이 게스트(참여자)
         let hostId = "numgame_room_" + roomCode + "_host";
 
         peer = new Peer(null, { debug: 1 });
 
         peer.on('open', (id) => {
             myId = id;
-            // 방장 ID로 먼저 연결 시도해보고, 실패하면 내가 방장(Host)이 됨
+            roomRankings[myId] = { nickname: myNickname, win: 0, lose: 0 };
             attemptConnect(hostId);
         });
 
         peer.on('connection', (incomingConn) => {
-            // 방장으로서 누군가 접속했을 때
             conn = incomingConn;
             isHost = true;
             setupConnection();
             
-            // 게스트에게 블랙/화이트 팀 배정 및 게임 시작 신호 전송
             setTimeout(() => {
                 conn.send({
                     type: 'START_GAME',
                     team: 'white',
-                    oppName: myNickname
+                    oppName: myNickname,
+                    rankings: roomRankings
                 });
                 initGame('black', conn.metadata ? conn.metadata.nickname : "상대방");
             }, 500);
         });
     }
 
-    // 방장에게 연결 시도 (두 번째 접속자용)
     function attemptConnect(hostId) {
         let trialConn = peer.connect(hostId, {
             metadata: { nickname: myNickname }
@@ -468,11 +521,9 @@
         });
 
         trialConn.on('error', (err) => {
-            // 방장이 아직 없다는 뜻이므로 내가 방장이 됨
             makeMyselfHost();
         });
 
-        // 3초 안에 연결 응답이 없으면 내가 방장 되기 시도
         setTimeout(() => {
             if (!conn && !isHost) {
                 makeMyselfHost();
@@ -487,7 +538,7 @@
         peer = new Peer(hostId, { debug: 1 });
         peer.on('open', (id) => {
             isHost = true;
-            document.getElementById('waiting-status-text').innerText = "방을 개설했습니다! 다른 친구가 들어오기를 기다리는 중...";
+            document.getElementById('waiting-status-text').innerText = "방을 개설했습니다! 상대방을 기다리는 중...";
         });
 
         peer.on('connection', (incomingConn) => {
@@ -495,17 +546,17 @@
             isHost = true;
             setupConnection();
 
-            // 상대방 닉네임 받아오기
             conn.on('data', (data) => {
                 if (data.type === 'GUEST_INFO') {
                     document.getElementById('opp-name-display').innerText = data.nickname;
-                    // 방장인 나는 'black' 팀
+                    if (data.rankings) roomRankings = { ...roomRankings, ...data.rankings };
+                    
                     initGame('black', data.nickname);
-                    // 상대방에게 시작 신호
                     conn.send({
                         type: 'START_GAME',
                         team: 'white',
-                        oppName: myNickname
+                        oppName: myNickname,
+                        rankings: roomRankings
                     });
                 }
             });
@@ -516,8 +567,7 @@
         document.getElementById('waiting-overlay').style.display = 'none';
 
         if (!isHost && conn) {
-            // 게스트인 경우 내 닉네임 전송
-            conn.send({ type: 'GUEST_INFO', nickname: myNickname });
+            conn.send({ type: 'GUEST_INFO', nickname: myNickname, rankings: roomRankings });
         }
 
         conn.on('data', (data) => {
@@ -530,11 +580,11 @@
         });
     }
 
-    // 통신 데이터 처리기
     function handleNetworkData(data) {
         switch (data.type) {
             case 'START_GAME':
                 document.getElementById('opp-name-display').innerText = data.oppName;
+                if (data.rankings) roomRankings = { ...roomRankings, ...data.rankings };
                 initGame(data.team, data.oppName);
                 break;
 
@@ -545,12 +595,16 @@
                 checkRoundEnd();
                 break;
 
-            case 'REMATCH_REQ':
-                if (rematchRequested) {
+            case 'REMATCH_READY':
+                oppRematchReady = true;
+                document.getElementById('rematch-status').innerText = "상대방이 재대결을 수락했습니다!";
+                if (rematchRequested && oppRematchReady) {
                     startRematch();
-                } else {
-                    document.getElementById('rematch-status').innerText = "상대방이 재대결을 요청했습니다!";
                 }
+                break;
+
+            case 'SYNC_RANKINGS':
+                roomRankings = data.rankings;
                 break;
         }
     }
@@ -561,7 +615,6 @@
         }
     }
 
-    // 게임 시작 초기화
     function initGame(team, oppName) {
         myTeam = team;
         document.getElementById('opp-name-display').innerText = oppName;
@@ -584,12 +637,14 @@
     function resetBoard() {
         currentRound = 1;
         myCardsUsed.fill(false);
+        myUsedCardsHistory = {};
         oppCardsLeft = 9;
         roundResults = [];
         mySelectedCard = null;
         oppSubmitted = false;
         oppCardValue = null;
         rematchRequested = false;
+        oppRematchReady = false;
 
         document.getElementById('result-overlay').style.display = 'none';
         document.getElementById('status-msg').innerText = "카드를 선택해 주세요";
@@ -606,7 +661,14 @@
         for (let i = 1; i <= 9; i++) {
             const btn = document.createElement('div');
             btn.className = `card ${myCardsUsed[i] ? 'disabled' : ''} ${mySelectedCard === i ? 'selected' : ''}`;
-            btn.innerText = i;
+            
+            let html = `<span>${i}</span>`;
+            // 내가 낸 적이 있다면 몇 라운드에 냈는지 표시
+            if (myUsedCardsHistory[i]) {
+                html += `<span class="card-history-badge">${myUsedCardsHistory[i]}R</span>`;
+            }
+            btn.innerHTML = html;
+
             if (!myCardsUsed[i]) {
                 btn.onclick = () => selectCard(i);
             }
@@ -645,6 +707,7 @@
 
         mySelectedCard = num;
         myCardsUsed[num] = true;
+        myUsedCardsHistory[num] = currentRound; // 내가 낸 카드 기록 저장
         renderCards();
 
         document.getElementById('status-msg').innerText = "상대방 대기 중...";
@@ -660,7 +723,6 @@
             const oppVal = oppCardValue;
             let winnerTeam = null;
 
-            // 1은 9를 잡는 변칙 규칙
             if (myVal === 1 && oppVal === 9) {
                 winnerTeam = myTeam;
                 triggerSpecialEffect();
@@ -748,6 +810,7 @@
         const title = document.getElementById('result-text');
         const detail = document.getElementById('result-detail');
 
+        // 전적은 오직 '라운드 최종 성적' 기준으로 반영
         if (myWins > oppWins) {
             title.innerText = "VICTORY";
             title.className = "result-title win";
@@ -759,10 +822,15 @@
         } else {
             title.innerText = "DRAW";
             title.className = "result-title draw";
+            // 무승부는 승패에 미반영 또는 필요시 처리
         }
 
         document.getElementById('my-record').innerText = `(${myRecord.win}승 ${myRecord.lose}패)`;
         detail.innerText = `최종 성적: ${myWins}승 ${draws}무 ${oppWins}패`;
+
+        // 방 랭킹 업데이트 후 동기화 전송
+        roomRankings[myId] = { nickname: myNickname, win: myRecord.win, lose: myRecord.lose };
+        sendData({ type: 'SYNC_RANKINGS', rankings: roomRankings });
 
         const rematchBtn = document.getElementById('rematch-btn');
         rematchBtn.innerText = `재대결 신청 (${rematchCount}/3)`;
@@ -782,13 +850,51 @@
     function requestRematch() {
         if (rematchCount >= 3) return;
         rematchRequested = true;
-        document.getElementById('rematch-status').innerText = "상대방 응답 대기 중...";
-        sendData({ type: 'REMATCH_REQ' });
+        document.getElementById('rematch-status').innerText = "재대결 신청 완료! 상대방 수락 대기 중...";
+        sendData({ type: 'REMATCH_READY' });
+
+        if (rematchRequested && oppRematchReady) {
+            startRematch();
+        }
     }
 
     function startRematch() {
         rematchCount++;
         resetBoard();
+    }
+
+    // 우리 방 전용 순위표 렌더링 함수
+    function renderRoomRankingList() {
+        const container = document.getElementById('room-ranking-list');
+        container.innerHTML = '';
+        
+        const sorted = Object.values(roomRankings).sort((a, b) => b.win - a.win);
+
+        if (sorted.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#888; padding:15px;">등록된 전적이 없습니다.</div>';
+            return;
+        }
+
+        sorted.forEach((p, idx) => {
+            let medal = `${idx + 1}위`;
+            if (idx === 0) medal = '🥇 1위';
+            else if (idx === 1) medal = '🥈 2위';
+            else if (idx === 2) medal = '🥉 3위';
+
+            const item = document.createElement('div');
+            item.className = 'ranking-item';
+            item.innerHTML = `<span><strong>${medal}</strong> ${p.nickname}</span><span style="color:var(--accent-gold);">${p.win}승 ${p.lose}패</span>`;
+            container.appendChild(item);
+        });
+    }
+
+    function openRoomRankingModal() {
+        renderRoomRankingList();
+        document.getElementById('room-ranking-overlay').style.display = 'flex';
+    }
+
+    function closeRoomRankingModal() {
+        document.getElementById('room-ranking-overlay').style.display = 'none';
     }
 
     function leaveRoom() {
