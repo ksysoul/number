@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>숫자심리대결(1-9) - 교실 실시간 대전</title>
-    <!-- 기기 간 실시간 통신을 위한 PeerJS 라이브러리 연동 -->
+    <!-- 기기 간 실시간 통신을 위한 PeerJS 라이브러리 -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -314,78 +314,61 @@
 <body>
 
 <div class="game-container">
-    <!-- 1. 로비 / 입장 화면 -->
+    <!-- 1. 로비 / 방 입장 화면 -->
     <div id="lobby-overlay" class="overlay">
         <h1 class="title">숫자심리대결(1-9)</h1>
-        <p class="subtitle">크롬북 교실 실시간 대전</p>
+        <p class="subtitle">실시간 크롬북 교실 대전</p>
 
         <div class="input-group">
-            <input type="text" id="nickname-input" placeholder="닉네임 입력 (예: 홍길동)" maxlength="8">
+            <input type="text" id="nickname-input" placeholder="내 닉네임 입력 (예: 홍길동)" maxlength="8">
         </div>
 
         <div class="input-group">
-            <input type="text" id="room-code-input" placeholder="반 코드 입력 (예: 6학년3반)" maxlength="10">
+            <input type="text" id="room-code-input" placeholder="방 코드(반 번호) 입력 (예: 63)" maxlength="10">
         </div>
 
-        <button class="btn" onclick="enterClassLobby()">대기실 입장하기</button>
-        <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444;" onclick="openRankingModalFromLobby()">🏆 우리 반 TOP 10 보기</button>
+        <button class="btn" onclick="enterRoom()">방 들어가기 / 대기하기</button>
     </div>
 
-    <!-- 로비 랭킹 모달 -->
-    <div id="lobby-ranking-overlay" class="overlay" style="display: none;">
-        <h2 class="title" style="font-size: 1.5rem;">🏆 우리 반 TOP 10 순위표</h2>
-        <div class="ranking-container" id="lobby-ranking-list"></div>
-        <button class="btn" onclick="closeLobbyRankingModal()">돌아가기</button>
-    </div>
-
-    <!-- 대기 중 모달 -->
+    <!-- 2. 대기실 화면 -->
     <div id="waiting-overlay" class="overlay" style="display: none;">
-        <h2 class="title" style="font-size: 1.5rem;">매칭 대기 중...</h2>
-        <p id="waiting-status-text" class="subtitle" style="margin-top: 10px;">상대를 찾는 중입니다...</p>
-        <div style="font-size: 2rem; margin: 15px 0;">⏳</div>
-        <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444; margin-bottom: 5px;" onclick="openGameRankingModal()">🏆 TOP 10 순위표 확인</button>
-        <button class="btn" style="background:#444; color:#fff; margin-top:0;" onclick="leaveToLobby()">나가기</button>
+        <h2 class="title" style="font-size: 1.6rem;" id="waiting-room-title">방 대기실</h2>
+        <p class="subtitle" id="waiting-status-text">상대방이 들어오기를 기다리는 중...</p>
+        <div style="font-size: 2rem; margin: 20px 0;">⏳</div>
+        <button class="btn" style="background:#444; color:#fff;" onclick="leaveRoom()">나가기</button>
     </div>
 
-    <!-- 게임 중 랭킹 모달 -->
-    <div id="game-ranking-overlay" class="overlay" style="display: none;">
-        <h2 class="title" style="font-size: 1.5rem;">🏆 우리 반 TOP 10 순위표</h2>
-        <div class="ranking-container" id="game-ranking-list"></div>
-        <button class="btn" onclick="closeGameRankingModal()">닫기</button>
-    </div>
-
-    <!-- 결과 모달 -->
+    <!-- 3. 게임 결과 화면 -->
     <div id="result-overlay" class="overlay" style="display: none;">
         <div id="result-text" class="result-title">VICTORY</div>
         <p id="result-detail" style="color:#ccc; margin-bottom: 20px;">성적 표시</p>
         
         <button id="rematch-btn" class="btn" onclick="requestRematch()">재대결 신청 (0/3)</button>
-        <button class="btn" style="background: linear-gradient(135deg, #00e5ff, #00838f); color:#000;" onclick="findNewMatch()">새로운 상대 매칭하기</button>
-        <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444;" onclick="openGameRankingModal()">🏆 TOP 10 순위표 확인</button>
+        <button class="btn" style="background: linear-gradient(135deg, #00e5ff, #00838f); color:#000;" onclick="leaveRoom()">방 나가기</button>
         <div id="rematch-status" class="rematch-info">상대방의 응답을 기다리는 중...</div>
     </div>
 
-    <!-- 상단 프로필 -->
+    <!-- 4. 상단 플레이어 프로필 -->
     <div class="header">
         <div class="player-profile">
             <span class="team-badge black" id="my-team-badge"></span>
             <strong id="my-name-display">나</strong>
             <span style="font-size:0.75rem; color:#888;" id="my-record">(0승 0패)</span>
         </div>
-        <div style="color:var(--accent-gold); font-weight:bold; cursor:pointer;" id="room-display" onclick="openGameRankingModal()">반: - (TOP10)</div>
+        <div style="color:var(--accent-gold); font-weight:bold;" id="room-display">ROOM: -</div>
         <div class="player-profile">
             <strong id="opp-name-display">상대방</strong>
             <span class="team-badge white" id="opp-team-badge"></span>
         </div>
     </div>
 
-    <!-- 상대방 영역 -->
+    <!-- 5. 상대방 영역 -->
     <div class="opponent-area">
         <div style="font-size:0.8rem; color:#aaa;" id="opp-status-text">상대방 고민 중...</div>
         <div class="cards-row" id="opp-cards-row"></div>
     </div>
 
-    <!-- 중앙 LED 전광판 -->
+    <!-- 6. 중앙 LED 전광판 -->
     <div class="center-arena" id="arena-box">
         <div class="round-indicator" id="round-title">ROUND 1 / 9</div>
         <div class="led-board" id="led-board"></div>
@@ -393,7 +376,7 @@
         <div class="timer-bar"><div class="timer-progress" id="timer-progress"></div></div>
     </div>
 
-    <!-- 내 카드 영역 -->
+    <!-- 7. 내 카드 패 영역 -->
     <div class="my-area">
         <div style="font-size:0.85rem; color:#ccc; margin-bottom:6px;">내 패 (1~9중 1장 선택)</div>
         <div class="my-cards" id="my-cards-grid"></div>
@@ -401,113 +384,173 @@
 </div>
 
 <script>
-    let myId = 'p_' + Math.random().toString(36).substr(2, 6);
-    let myNickname = "";
-    let roomCode = "";
     let peer = null;
     let conn = null;
+    let myId = "";
+    let myNickname = "";
+    let roomCode = "";
     let isHost = false;
 
-    let myTeam = "";
+    let myTeam = ""; 
     let myRecord = { win: 0, lose: 0 };
     let rematchCount = 0;
+
     let currentRound = 1;
-    let myCardsUsed = Array(10).fill(false);
+    let myCardsUsed = Array(10).fill(false); 
     let oppCardsLeft = 9;
     let mySelectedCard = null;
     let oppSubmitted = false;
-    let oppCardValue = null;
-    let roundResults = [];
+    let oppCardValue = null; 
+    
+    let roundResults = []; 
     let rematchRequested = false;
     let timerInterval = null;
-    let classRankings = {};
 
-    function enterClassLobby() {
+    // 방 들어가기 버튼 클릭 시
+    function enterRoom() {
         const nickInput = document.getElementById('nickname-input').value.trim();
         const codeInput = document.getElementById('room-code-input').value.trim();
 
         if (!nickInput || !codeInput) {
-            alert("닉네임과 반 코드를 모두 입력해 주세요!");
+            alert("닉네임과 방 코드를 모두 입력해 주세요!");
             return;
         }
 
         myNickname = nickInput;
-        roomCode = codeInput.toLowerCase();
+        roomCode = codeInput.toLowerCase().trim();
 
         document.getElementById('my-name-display').innerText = myNickname;
-        document.getElementById('room-display').innerText = `${roomCode} (TOP10)`;
+        document.getElementById('room-display').innerText = `ROOM: ${roomCode}`;
         document.getElementById('lobby-overlay').style.display = 'none';
+        document.getElementById('waiting-overlay').style.display = 'flex';
+        document.getElementById('waiting-room-title').innerText = `방 [${roomCode}] 대기실`;
 
-        classRankings[myId] = { nickname: myNickname, win: 0, lose: 0 };
+        // PeerJS를 이용해 방 코드 기반 네트워크 고유 ID 생성
+        // 먼저 들어오는 사람이 호스트(방장), 두 번째로 들어오는 사람이 게스트(참여자)
+        let hostId = "numgame_room_" + roomCode + "_host";
 
-        // PeerJS 연결 (반 코드를 고유 접두사로 활용)
         peer = new Peer(null, { debug: 1 });
+
         peer.on('open', (id) => {
             myId = id;
-            classRankings[myId] = { nickname: myNickname, win: 0, lose: 0 };
-            startQueue();
+            // 방장 ID로 먼저 연결 시도해보고, 실패하면 내가 방장(Host)이 됨
+            attemptConnect(hostId);
         });
 
-        peer.on('connection', (connection) => {
-            conn = connection;
+        peer.on('connection', (incomingConn) => {
+            // 방장으로서 누군가 접속했을 때
+            conn = incomingConn;
+            isHost = true;
+            setupConnection();
+            
+            // 게스트에게 블랙/화이트 팀 배정 및 게임 시작 신호 전송
+            setTimeout(() => {
+                conn.send({
+                    type: 'START_GAME',
+                    team: 'white',
+                    oppName: myNickname
+                });
+                initGame('black', conn.metadata ? conn.metadata.nickname : "상대방");
+            }, 500);
+        });
+    }
+
+    // 방장에게 연결 시도 (두 번째 접속자용)
+    function attemptConnect(hostId) {
+        let trialConn = peer.connect(hostId, {
+            metadata: { nickname: myNickname }
+        });
+
+        trialConn.on('open', () => {
+            conn = trialConn;
+            isHost = false;
             setupConnection();
         });
+
+        trialConn.on('error', (err) => {
+            // 방장이 아직 없다는 뜻이므로 내가 방장이 됨
+            makeMyselfHost();
+        });
+
+        // 3초 안에 연결 응답이 없으면 내가 방장 되기 시도
+        setTimeout(() => {
+            if (!conn && !isHost) {
+                makeMyselfHost();
+            }
+        }, 3000);
     }
 
-    function startQueue() {
-        isHost = true;
-        document.getElementById('result-overlay').style.display = 'none';
-        document.getElementById('waiting-overlay').style.display = 'flex';
-        document.getElementById('waiting-status-text').innerText = "상대를 기다리는 중...";
+    function makeMyselfHost() {
+        if (peer) peer.destroy();
+        let hostId = "numgame_room_" + roomCode + "_host";
+        
+        peer = new Peer(hostId, { debug: 1 });
+        peer.on('open', (id) => {
+            isHost = true;
+            document.getElementById('waiting-status-text').innerText = "방을 개설했습니다! 다른 친구가 들어오기를 기다리는 중...";
+        });
 
-        // 간단한 공개 발견 신호 (GitHub 정적 환경용 타이머 폴링)
-        pollForOpponent();
+        peer.on('connection', (incomingConn) => {
+            conn = incomingConn;
+            isHost = true;
+            setupConnection();
+
+            // 상대방 닉네임 받아오기
+            conn.on('data', (data) => {
+                if (data.type === 'GUEST_INFO') {
+                    document.getElementById('opp-name-display').innerText = data.nickname;
+                    // 방장인 나는 'black' 팀
+                    initGame('black', data.nickname);
+                    // 상대방에게 시작 신호
+                    conn.send({
+                        type: 'START_GAME',
+                        team: 'white',
+                        oppName: myNickname
+                    });
+                }
+            });
+        });
     }
 
-    let pollInterval = null;
-    function pollForOpponent() {
-        if (!isHost) return;
-        // GitHub 정적 페이지 특성상 호스트-게스트 매칭을 위한 임시 오픈 소켓 대체 로직
-        // (실제 기기 간 방 코드를 통한 연결)
-        let guestTargetId = roomCode + "_guest_" + Math.floor(Math.random() * 5);
-        // 클라이언트 간 통신을 위해 릴레이 서버인 PeerJS 퍼블릭 서버 활용
-    }
-
-    // 간단하고 직관적인 크롬북 실시간 대전을 위해 상대방 Peer ID 교환 처리
     function setupConnection() {
-        isHost = false;
         document.getElementById('waiting-overlay').style.display = 'none';
 
+        if (!isHost && conn) {
+            // 게스트인 경우 내 닉네임 전송
+            conn.send({ type: 'GUEST_INFO', nickname: myNickname });
+        }
+
         conn.on('data', (data) => {
-            handleData(data);
+            handleNetworkData(data);
         });
 
         conn.on('close', () => {
-            alert("상대방이 나갔습니다.");
-            leaveToLobby();
+            alert("상대방이 방을 나갔습니다.");
+            leaveRoom();
         });
     }
 
-    function handleData(data) {
-        switch(data.type) {
+    // 통신 데이터 처리기
+    function handleNetworkData(data) {
+        switch (data.type) {
             case 'START_GAME':
-                initGame(data.myTeam, data.oppName);
+                document.getElementById('opp-name-display').innerText = data.oppName;
+                initGame(data.team, data.oppName);
                 break;
+
             case 'SUBMIT_CARD':
                 oppSubmitted = true;
                 oppCardValue = data.cardValue;
                 document.getElementById('opp-status-text').innerText = "상대방 제출 완료!";
                 checkRoundEnd();
                 break;
-            case 'REMATCH':
+
+            case 'REMATCH_REQ':
                 if (rematchRequested) {
                     startRematch();
                 } else {
                     document.getElementById('rematch-status').innerText = "상대방이 재대결을 요청했습니다!";
                 }
-                break;
-            case 'SYNC_RANK':
-                classRankings[data.id] = data.stat;
                 break;
         }
     }
@@ -518,10 +561,12 @@
         }
     }
 
+    // 게임 시작 초기화
     function initGame(team, oppName) {
         myTeam = team;
         document.getElementById('opp-name-display').innerText = oppName;
         document.getElementById('waiting-overlay').style.display = 'none';
+        document.getElementById('result-overlay').style.display = 'none';
 
         const myBadge = document.getElementById('my-team-badge');
         const oppBadge = document.getElementById('opp-team-badge');
@@ -615,6 +660,7 @@
             const oppVal = oppCardValue;
             let winnerTeam = null;
 
+            // 1은 9를 잡는 변칙 규칙
             if (myVal === 1 && oppVal === 9) {
                 winnerTeam = myTeam;
                 triggerSpecialEffect();
@@ -718,8 +764,17 @@
         document.getElementById('my-record').innerText = `(${myRecord.win}승 ${myRecord.lose}패)`;
         detail.innerText = `최종 성적: ${myWins}승 ${draws}무 ${oppWins}패`;
 
-        classRankings[myId] = { nickname: myNickname, win: myRecord.win, lose: myRecord.lose };
-        sendData({ type: 'SYNC_RANK', id: myId, stat: classRankings[myId] });
+        const rematchBtn = document.getElementById('rematch-btn');
+        rematchBtn.innerText = `재대결 신청 (${rematchCount}/3)`;
+        if (rematchCount >= 3) {
+            rematchBtn.disabled = true;
+            rematchBtn.style.opacity = '0.5';
+            document.getElementById('rematch-status').innerText = "최대 재대결 횟수(3회) 초과";
+        } else {
+            rematchBtn.disabled = false;
+            rematchBtn.style.opacity = '1';
+            document.getElementById('rematch-status').innerText = "";
+        }
 
         document.getElementById('result-overlay').style.display = 'flex';
     }
@@ -728,7 +783,7 @@
         if (rematchCount >= 3) return;
         rematchRequested = true;
         document.getElementById('rematch-status').innerText = "상대방 응답 대기 중...";
-        sendData({ type: 'REMATCH' });
+        sendData({ type: 'REMATCH_REQ' });
     }
 
     function startRematch() {
@@ -736,41 +791,10 @@
         resetBoard();
     }
 
-    function findNewMatch() {
-        if (conn) conn.close();
-        startQueue();
+    function leaveRoom() {
+        if (peer) peer.destroy();
+        document.location.reload();
     }
-
-    // TOP 10 랭킹 렌더링
-    function renderRankingList(containerId) {
-        const container = document.getElementById(containerId);
-        container.innerHTML = '';
-        const sorted = Object.values(classRankings).sort((a, b) => b.win - a.win);
-        const top10 = sorted.slice(0, 10);
-
-        if (top10.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#888; padding:15px;">등록된 전적이 없습니다.</div>';
-            return;
-        }
-
-        top10.forEach((p, idx) => {
-            let medal = `${idx + 1}위`;
-            if (idx === 0) medal = '🥇 1위';
-            else if (idx === 1) medal = '🥈 2위';
-            else if (idx === 2) medal = '🥉 3위';
-
-            const item = document.createElement('div');
-            item.className = 'ranking-item';
-            item.innerHTML = `<span><strong>${medal}</strong> ${p.nickname}</span><span style="color:var(--accent-gold);">${p.win}승 ${p.lose}패</span>`;
-            container.appendChild(item);
-        });
-    }
-
-    function openLobbyRankingModal() { renderRankingList('lobby-ranking-list'); document.getElementById('lobby-ranking-overlay').style.display = 'flex'; }
-    function closeLobbyRankingModal() { document.getElementById('lobby-ranking-overlay').style.display = 'none'; }
-    function openGameRankingModal() { renderRankingList('game-ranking-list'); document.getElementById('game-ranking-overlay').style.display = 'flex'; }
-    function closeGameRankingModal() { document.getElementById('game-ranking-overlay').style.display = 'none'; }
-    function leaveToLobby() { document.location.reload(); }
 </script>
 </body>
 </html>
