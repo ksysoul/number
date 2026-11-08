@@ -43,17 +43,18 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
+            padding: 16px;
             position: relative;
             border: 1px solid #333;
         }
 
+        /* 오버레이 (z-index를 확실히 높여서 버튼 클릭 방해 방지) */
         .overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(18, 18, 18, 0.96);
             backdrop-filter: blur(8px);
-            z-index: 100;
+            z-index: 500;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -112,6 +113,8 @@
             cursor: pointer;
             transition: 0.2s;
             margin-top: 10px;
+            position: relative;
+            z-index: 501;
         }
 
         .btn:hover {
@@ -140,7 +143,7 @@
             font-size: 0.9rem;
         }
 
-        /* 상단 플레이어 대형 프로필 바 */
+        /* 닉네임 시인성을 대폭 강화한 상단 프로필 바 */
         .header {
             display: flex;
             justify-content: space-between;
@@ -148,7 +151,7 @@
             background: #222228;
             padding: 12px 16px;
             border-radius: 12px;
-            font-size: 1rem;
+            border: 1px solid #3a3a45;
         }
 
         .player-profile {
@@ -156,13 +159,18 @@
             flex-direction: column;
             align-items: center;
             gap: 4px;
+            width: 42%;
         }
 
         .big-nickname {
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             font-weight: 900;
-            color: #fff;
-            text-shadow: 0 0 8px rgba(255,255,255,0.2);
+            color: var(--accent-gold);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
 
         .team-badge {
@@ -170,7 +178,7 @@
             height: 12px;
             border-radius: 50%;
             display: inline-block;
-            border: 1px solid #666;
+            border: 1px solid #888;
         }
         .team-badge.black { background: #000; border-color: #555; }
         .team-badge.white { background: #fff; }
@@ -178,28 +186,28 @@
         /* 상대방 영역 */
         .opponent-area {
             text-align: center;
-            padding: 8px 0;
+            padding: 4px 0;
         }
 
         .cards-row {
             display: flex;
             justify-content: center;
-            gap: 6px;
-            margin-top: 8px;
+            gap: 5px;
+            margin-top: 6px;
         }
 
         .card-back {
-            width: 34px;
-            height: 48px;
+            width: 32px;
+            height: 44px;
             background: linear-gradient(135deg, #2c2c35, #1a1a20);
             border: 1px solid #444;
-            border-radius: 6px;
+            border-radius: 5px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #555;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .card-back.used {
@@ -208,20 +216,20 @@
             border-color: #222;
         }
 
-        /* 중앙 LED 전광판 (크기 확대) */
+        /* 중앙 LED 전광판 및 미니 패 모양 기록 바 */
         .center-arena {
             background: #202026;
             border-radius: 16px;
-            padding: 15px;
+            padding: 14px;
             text-align: center;
             position: relative;
             border: 1px solid #2e2e38;
         }
 
         .round-indicator {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--accent-gold);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             letter-spacing: 1px;
         }
 
@@ -229,56 +237,74 @@
             display: flex;
             justify-content: center;
             gap: 6px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .led {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             background: #151518;
             border: 2px solid #444;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: bold;
             color: #666;
             transition: 0.4s;
         }
 
-        .led.black-win { 
-            background: #00e5ff; 
-            border-color: #00e5ff; 
-            box-shadow: 0 0 14px #00e5ff; 
-            color: #000; 
-        }
-        .led.white-win { 
-            background: #ff4081; 
-            border-color: #ff4081; 
-            box-shadow: 0 0 14px #ff4081; 
-            color: #fff; 
-        }
-        .led.draw { 
-            background: #888; 
-            border-color: #ccc; 
-            color: #222;
+        .led.black-win { background: #00e5ff; border-color: #00e5ff; box-shadow: 0 0 12px #00e5ff; color: #000; }
+        .led.white-win { background: #ff4081; border-color: #ff4081; box-shadow: 0 0 12px #ff4081; color: #fff; }
+        .led.draw { background: #888; border-color: #ccc; color: #222; }
+
+        /* [요청 반영] 승패 불 아래 미니 패 모양 기록 슬롯바 */
+        .my-played-history-bar {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            margin-top: 6px;
+            margin-bottom: 4px;
+            min-height: 36px;
+            align-items: center;
         }
 
-        .status-message {
-            font-size: 1.1rem;
-            font-weight: bold;
-            min-height: 28px;
+        .mini-card-slot {
+            width: 26px;
+            height: 34px;
+            background: #151518;
+            border: 1px dashed #444;
+            border-radius: 4px;
             display: flex;
             justify-content: center;
             align-items: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #555;
+        }
+        .mini-card-slot.filled {
+            background: linear-gradient(135deg, #2a2a35, #1f1f26);
+            border: 1.5px solid #00e5ff;
+            color: #fff;
+            box-shadow: 0 2px 5px rgba(0,229,255,0.3);
+        }
+
+        .status-message {
+            font-size: 1rem;
+            font-weight: bold;
+            min-height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 4px;
         }
 
         .timer-bar {
             width: 100%;
-            height: 4px;
+            height: 3px;
             background: #333;
-            margin-top: 10px;
+            margin-top: 8px;
             border-radius: 2px;
             overflow: hidden;
         }
@@ -297,25 +323,23 @@
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 6px;
-            margin-top: 8px;
+            margin-top: 6px;
         }
 
         .card {
-            aspect-ratio: 1 / 1.35;
+            aspect-ratio: 1 / 1.3;
             background: linear-gradient(135deg, #2a2a35, #1f1f26);
             border: 2px solid #444;
             border-radius: 8px;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 1.4rem;
+            font-size: 1.35rem;
             font-weight: bold;
             color: #fff;
             cursor: pointer;
             transition: 0.2s;
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-            position: relative;
         }
 
         .card:hover:not(.disabled) {
@@ -324,18 +348,8 @@
             box-shadow: 0 6px 12px rgba(255, 215, 0, 0.3);
         }
 
-        .card.selected { border-color: #00e5ff; background: #1a3540; transform: translateY(-6px); }
+        .card.selected { border-color: #00e5ff; background: #1a3540; transform: translateY(-5px); }
         .card.disabled { opacity: 0.3; cursor: not-allowed; border-color: #222; background: #141416; color: #555; }
-
-        /* 내가 낸 패에 표시되는 작은 마크 (사용 기록) */
-        .card-history-badge {
-            position: absolute;
-            bottom: 2px;
-            right: 4px;
-            font-size: 0.65rem;
-            font-weight: bold;
-            color: #ffd700;
-        }
 
         .result-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 10px; }
         .result-title.win { color: #00e5ff; text-shadow: 0 0 15px rgba(0,229,255,0.5); }
@@ -397,42 +411,47 @@
         <div id="rematch-status" class="rematch-info">상대방의 응답을 기다리는 중...</div>
     </div>
 
-    <!-- 4. 상단 플레이어 대형 프로필 -->
+    <!-- 4. 상단 플레이어 대형 프로필 (닉네임 눈에 띄게 강조) -->
     <div class="header">
         <div class="player-profile">
-            <div style="display: flex; align-items: center; gap: 5px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
                 <span class="team-badge black" id="my-team-badge"></span>
                 <span class="big-nickname" id="my-name-display">나</span>
             </div>
-            <span style="font-size:0.75rem; color:#888;" id="my-record">(0승 0패)</span>
+            <span style="font-size:0.75rem; color:#aaa;" id="my-record">(0승 0패)</span>
         </div>
-        <div style="color:var(--accent-gold); font-weight:bold; font-size:0.9rem;" id="room-display">ROOM: -</div>
+        <div style="color:var(--accent-gold); font-weight:bold; font-size:0.85rem;" id="room-display">ROOM: -</div>
         <div class="player-profile">
-            <div style="display: flex; align-items: center; gap: 5px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
                 <span class="big-nickname" id="opp-name-display">상대방</span>
                 <span class="team-badge white" id="opp-team-badge"></span>
             </div>
-            <span style="font-size:0.75rem; color:#888;">상대</span>
+            <span style="font-size:0.75rem; color:#aaa;">상대방</span>
         </div>
     </div>
 
     <!-- 5. 상대방 영역 -->
     <div class="opponent-area">
-        <div style="font-size:0.8rem; color:#aaa;" id="opp-status-text">상대방 고민 중...</div>
+        <div style="font-size:0.75rem; color:#aaa;" id="opp-status-text">상대방 고민 중...</div>
         <div class="cards-row" id="opp-cards-row"></div>
     </div>
 
-    <!-- 6. 중앙 LED 전광판 (크기 확대) -->
+    <!-- 6. 중앙 LED 전광판 및 미니 패 모양 기록 바 -->
     <div class="center-arena" id="arena-box">
         <div class="round-indicator" id="round-title">ROUND 1 / 9</div>
         <div class="led-board" id="led-board"></div>
+        
+        <!-- 승패 불빛 아래 미니 카드 모양 기록 슬롯 -->
+        <div style="font-size:0.7rem; color:#aaa; margin-top:4px;">내가 낸 패 기록</div>
+        <div class="my-played-history-bar" id="played-history-bar"></div>
+
         <div class="status-message" id="status-msg">카드를 선택해 주세요</div>
         <div class="timer-bar"><div class="timer-progress" id="timer-progress"></div></div>
     </div>
 
-    <!-- 7. 내 카드 패 영역 (내가 낸 패 기록 표시) -->
+    <!-- 7. 내 카드 패 영역 -->
     <div class="my-area">
-        <div style="font-size:0.85rem; color:#ccc; margin-bottom:4px;">내 패 (1~9중 1장 선택)</div>
+        <div style="font-size:0.8rem; color:#ccc; margin-bottom:4px;">내 패 (1~9중 1장 선택)</div>
         <div class="my-cards" id="my-cards-grid"></div>
     </div>
 </div>
@@ -448,7 +467,7 @@
     let myTeam = ""; 
     let myRecord = { win: 0, lose: 0 };
     let rematchCount = 0;
-    let myUsedCardsHistory = {}; // { 카드숫자: 라운드번호 }
+    let myHistoryCards = []; // 내가 낸 카드들을 순서대로 저장
 
     let currentRound = 1;
     let myCardsUsed = Array(10).fill(false); 
@@ -462,7 +481,7 @@
     let oppRematchReady = false;
     let timerInterval = null;
 
-    let roomRankings = {}; // 방 구성원 전적 데이터
+    let roomRankings = {}; 
 
     function enterRoom() {
         const nickInput = document.getElementById('nickname-input').value.trim();
@@ -637,7 +656,7 @@
     function resetBoard() {
         currentRound = 1;
         myCardsUsed.fill(false);
-        myUsedCardsHistory = {};
+        myHistoryCards = [];
         oppCardsLeft = 9;
         roundResults = [];
         mySelectedCard = null;
@@ -652,6 +671,7 @@
         
         renderCards();
         renderLEDs();
+        renderHistoryBar();
         startTimer();
     }
 
@@ -661,14 +681,7 @@
         for (let i = 1; i <= 9; i++) {
             const btn = document.createElement('div');
             btn.className = `card ${myCardsUsed[i] ? 'disabled' : ''} ${mySelectedCard === i ? 'selected' : ''}`;
-            
-            let html = `<span>${i}</span>`;
-            // 내가 낸 적이 있다면 몇 라운드에 냈는지 표시
-            if (myUsedCardsHistory[i]) {
-                html += `<span class="card-history-badge">${myUsedCardsHistory[i]}R</span>`;
-            }
-            btn.innerHTML = html;
-
+            btn.innerText = i;
             if (!myCardsUsed[i]) {
                 btn.onclick = () => selectCard(i);
             }
@@ -702,13 +715,31 @@
         document.getElementById('round-title').innerText = `ROUND ${currentRound} / 9`;
     }
 
+    // 중앙 승패 불 아래 미니 카드 형태 기록 슬롯 렌더링
+    function renderHistoryBar() {
+        const bar = document.getElementById('played-history-bar');
+        bar.innerHTML = '';
+        for (let i = 0; i < 9; i++) {
+            const slot = document.createElement('div');
+            if (myHistoryCards[i] !== undefined) {
+                slot.className = 'mini-card-slot filled';
+                slot.innerText = myHistoryCards[i];
+            } else {
+                slot.className = 'mini-card-slot';
+                slot.innerText = '';
+            }
+            bar.appendChild(slot);
+        }
+    }
+
     function selectCard(num) {
         if (mySelectedCard !== null) return;
 
         mySelectedCard = num;
         myCardsUsed[num] = true;
-        myUsedCardsHistory[num] = currentRound; // 내가 낸 카드 기록 저장
+        myHistoryCards.push(num); // 내가 낸 패 기록 추가
         renderCards();
+        renderHistoryBar();
 
         document.getElementById('status-msg').innerText = "상대방 대기 중...";
         sendData({ type: 'SUBMIT_CARD', cardValue: num });
@@ -760,6 +791,7 @@
                     document.getElementById('opp-status-text').innerText = "상대방 고민 중...";
                     renderCards();
                     renderLEDs();
+                    renderHistoryBar();
                     startTimer();
                 } else {
                     endGame();
@@ -810,25 +842,24 @@
         const title = document.getElementById('result-text');
         const detail = document.getElementById('result-detail');
 
-        // 전적은 오직 '라운드 최종 성적' 기준으로 반영
-        if (myWins > oppWins) {
+        // [요청 반영] 9라운드 중 5승 이상 시 1승(+1), 4승 이하이면서 상대보다 적으면 1패(+1), 동률이거나 하면 무승부/패 처리
+        if (myWins >= 5) {
             title.innerText = "VICTORY";
             title.className = "result-title win";
             myRecord.win++;
-        } else if (oppWins > myWins) {
+        } else if (oppWins >= 5) {
             title.innerText = "DEFEAT";
             title.className = "result-title lose";
             myRecord.lose++;
         } else {
             title.innerText = "DRAW";
             title.className = "result-title draw";
-            // 무승부는 승패에 미반영 또는 필요시 처리
+            // 동률이나 무승부 시 전적 변동 없음 또는 원하시는 대로 처리
         }
 
         document.getElementById('my-record').innerText = `(${myRecord.win}승 ${myRecord.lose}패)`;
-        detail.innerText = `최종 성적: ${myWins}승 ${draws}무 ${oppWins}패`;
+        detail.innerText = `최종 라운드 전적: ${myWins}승 ${draws}무 ${oppWins}패`;
 
-        // 방 랭킹 업데이트 후 동기화 전송
         roomRankings[myId] = { nickname: myNickname, win: myRecord.win, lose: myRecord.lose };
         sendData({ type: 'SYNC_RANKINGS', rankings: roomRankings });
 
