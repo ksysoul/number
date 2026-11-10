@@ -395,7 +395,7 @@
         <button class="btn" onclick="enterLobby()">대기실 입장하기</button>
     </div>
 
-    <!-- 2. 대기실 화면 (자동 랜덤 매칭 대기) -->
+    <!-- 2. 대기실 화면 -->
     <div id="waiting-overlay" class="overlay" style="display: none;">
         <h2 class="title" style="font-size: 1.6rem;" id="waiting-room-title">대기실</h2>
         <p class="subtitle" id="waiting-status-text">상대방을 찾는 중입니다...</p>
@@ -479,14 +479,13 @@
     }
     const db = firebase.database();
 
-    let myId = "user_" + Math.random().toString(36.substring(2, 9));
+    let myId = "user_" + Math.random().toString(36).substring(2, 9);
     let myNickname = "";
     let roomCode = "";
-    let myTeam = "blue"; // 'blue' 또는 'red'
+    let myTeam = "blue";
     let myRecord = { win: 0, draw: 0, lose: 0, score: 0 };
     
-    let currentMatchId = null; // 현재 진행 중인 게임방 ID
-    let isHostInMatch = false;
+    let currentMatchId = null;
     let matchRef = null;
     let myHistoryCards = [];
 
@@ -515,9 +514,7 @@
         document.getElementById('room-display').innerText = `ROOM: ${roomCode}`;
         document.getElementById('lobby-overlay').style.display = 'none';
         
-        // 내 전적 초기화 또는 불러오기
         updateMyRecordDisplay();
-        
         enterWaitingRoom();
     }
 
@@ -530,7 +527,6 @@
         document.getElementById('waiting-room-title').innerText = `방 [${roomCode}] 대기실`;
         document.getElementById('waiting-status-text').innerText = "상대방을 찾는 중입니다...";
 
-        // 1. 대기열(Queue)에 나를 등록
         const queueRef = db.ref(`rooms/${roomCode}/queue`);
         const myQueueRef = queueRef.child(myId);
         
@@ -538,53 +534,23 @@
             id: myId,
             nickname: myNickname,
             score: myRecord.score,
-            win: myRecord.win,
-            draw: myRecord.draw,
-            lose: myRecord.lose,
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        // 접속 끊기거나 나갈 때 대기열에서 자동 삭제
         myQueueRef.onDisconnect().remove();
 
-        // 2. 대기열 모니터링 (랜덤 매칭 알고리즘)
-        queueRef.on('value', (snapshot) => {
-            if (currentMatchId) return; // 이미 게임 중이면 무시
-
-            const queueData = snapshot.val();
-            if (!queueData) return;
-
-            const users = Object.values(queueData).sort((a, b) => a.timestamp - b.timestamp);
-
-            if (users.length >= 2) {
-                // 대기열에 2명 이상 있으면 앞의 2명을 뽑아 매칭
-                const p1 = users[0];
-                const p2 = users[1];
-
-                if (p1.id === myId || p2.id === myId) {
-                    // 내가 이 매칭에 포함된 경우
-                    if (p1.id === myId) {
-                        // 내가 방장(Host) 역할 -> 매칭 방 생성
-                        const matchId = "match_" + roomCode + "_" + Date.now();
-                        db.ref(`rooms/${roomCode}/matches/${matchId}`).set({
-                            player1: { id: p1.id, nickname: p1.nickname, team: 'blue' },
-                            player2: { id: p2.id, nickname: p2.nickname, team: 'red' },
-                            status: 'playing',
-                            round: 1,
-                            p1Card: null,
-                            p2Card: null,
-                            result: null
-                        });
-
-                        // 대기열에서 두 사람 제거
-                        queueRef.child(p1.id).remove();
-                        queueRef.child(p2.id).remove();
-                    }
-                }
-            }
+        // 💡 대기열 진입 시점에 큐를 한 번 읽어서 2명 이상이면 즉시 안전하게 짝짓기 수행
+        queueRef.once('value', (snapshot) => {
+            tryMatch(queueRef);
         });
 
-        // 3. 내가 속한 대전 방(Match) 생성 여부 감시
+        // 대기열에 변화가 생길 때마다 실시간으로 짝짓기 감시
+        queueRef.on('value', (snapshot) => {
+            if (currentMatchId) return;
+            tryMatch(queueRef);
+        });
+
+        // 내가 속한 대전 방(Match) 생성 여부 감시
         const matchesRef = db.ref(`rooms/${roomCode}/matches`);
         matchesRef.on('value', (snapshot) => {
             if (currentMatchId) return;
@@ -596,8 +562,7 @@
                 const match = matches[matchId];
                 if (match.status === 'playing') {
                     if (match.player1.id === myId || match.player2.id === myId) {
-                        // 내 매칭이 성사됨!
-                        queueRef.child(myId).remove(); // 대기열에서 나감
+                        queueRef.child(myId).remove();
                         startMatch(matchId, match);
                         break;
                     }
@@ -605,8 +570,40 @@
             }
         });
 
-        // 4. 랭킹 데이터도 실시간 동기화 업데이트
         updateRankingDataInDB();
+    }
+
+    // 💡 여러 명이 들어와도 꼬이지 않고 선착순 2명씩 정확히 방을 만들어주는 안전 매칭 함수
+    function tryMatch(queueRef) {
+        queueRef.transaction((queueData) => {
+            if (!queueData) return;
+
+            const users = Object.keys(queueData)
+                .map(key => ({ id: key, ...queueData[key] }))
+                .sort((a, b) => a.timestamp - b.timestamp);
+
+            if (users.length >= 2) {
+                const p1 = users[0];
+                const p2 = users[1];
+
+                const matchId = "match_" + roomCode + "_" + Date.now();
+                db.ref(`rooms/${roomCode}/matches/${matchId}`).set({
+                    player1: { id: p1.id, nickname: p1.nickname, team: 'blue' },
+                    player2: { id: p2.id, nickname: p2.nickname, team: 'red' },
+                    status: 'playing',
+                    round: 1,
+                    p1Card: null,
+                    p2Card: null,
+                    result: null
+                });
+
+                // 큐에서 두 사람 제거
+                delete queueData[p1.id];
+                delete queueData[p2.id];
+                return queueData;
+            }
+            return;
+        });
     }
 
     function startMatch(matchId, matchData) {
@@ -620,13 +617,11 @@
         document.getElementById('waiting-overlay').style.display = 'none';
         initGame(myTeam, oppInfo.nickname);
 
-        // 매칭 방 실시간 감시 (상대방 카드 제출, 라운드 결과 등)
         matchRef.on('value', (snapshot) => {
             const m = snapshot.val();
             if (!m) return;
 
             const oppCard = isP1 ? m.p2Card : m.p1Card;
-            const myCard = isP1 ? m.p1Card : m.p2Card;
 
             if (oppCard !== null && oppCard !== undefined) {
                 oppSubmitted = true;
@@ -752,12 +747,10 @@
         document.getElementById('status-msg').innerText = "상대방 대기 중...";
 
         const isP1 = document.getElementById('my-profile-card').classList.contains('blue-team') === (myTeam === 'blue');
-        // Firebase에 내 카드 제출 기록
         matchRef.child(isP1 ? 'p1Card' : 'p2Card').set(num);
     }
 
     function checkRoundResultSync(matchData) {
-        // 양쪽 다 카드를 냈는지 확인
         if (matchData.p1Card !== null && matchData.p1Card !== undefined && 
             matchData.p2Card !== null && matchData.p2Card !== undefined) {
             
@@ -797,7 +790,6 @@
 
             renderRoundsGrid();
 
-            // 방장(P1)이 라운드 초기화 및 다음 라운드 진행 담당
             if (isP1) {
                 setTimeout(() => {
                     if (currentRound < 9) {
