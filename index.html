@@ -128,18 +128,30 @@
             box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
         }
 
-        /* 랭킹 컨테이너 */
+        /* 랭킹 모달 컨테이너 및 설명 규칙 */
+        .ranking-info-box {
+            font-size: 0.85rem;
+            color: #bbb;
+            background: #2a2a32;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid #444;
+        }
+
         .ranking-container {
             width: 100%;
-            max-width: 360px;
-            max-height: 250px;
+            max-width: 380px;
+            max-height: 280px;
             overflow-y: auto;
             background: #222228;
             border-radius: 8px;
             margin-bottom: 15px;
             border: 1px solid #333;
             text-align: left;
-            padding: 10px;
+            padding: 8px;
         }
 
         .ranking-item {
@@ -147,7 +159,11 @@
             justify-content: space-between;
             padding: 8px 12px;
             border-bottom: 1px solid #2a2a32;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+        }
+
+        .ranking-item.empty {
+            color: #555;
         }
 
         /* 팀 구분이 직관적인 상단 프로필 바 */
@@ -268,7 +284,6 @@
             gap: 6px;
         }
 
-        /* LED 색상 변경: 파랑승(파랑), 빨강승(빨강), 무승부(녹색) */
         .led {
             width: 34px;
             height: 34px;
@@ -349,7 +364,7 @@
             transition: width 1s linear;
         }
 
-        /* 내 패 영역 (파랑팀 테마 적용) */
+        /* 내 패 영역 */
         .my-area { text-align: center; }
 
         .my-cards {
@@ -426,9 +441,13 @@
         <button class="btn" style="background:#444; color:#fff; margin-top:0;" onclick="leaveRoom()">나가기</button>
     </div>
 
-    <!-- 우리 방 전용 랭킹 모달 -->
+    <!-- 우리 방 전용 TOP 10 랭킹 모달 -->
     <div id="room-ranking-overlay" class="overlay" style="display: none;">
-        <h2 class="title" style="font-size: 1.5rem;">🏆 우리 방 순위표</h2>
+        <h2 class="title" style="font-size: 1.5rem;">🏆 우리 방 순위표 (TOP 10)</h2>
+        <div class="ranking-info-box">
+            💡 <strong>승점 산정 규칙:</strong><br>
+            최종 1승 = <strong>3점</strong> / 무승부 = <strong>2점</strong> / 패배 = <strong>1점</strong>
+        </div>
         <div class="ranking-container" id="room-ranking-list"></div>
         <button class="btn" onclick="closeRoomRankingModal()">닫기</button>
     </div>
@@ -436,7 +455,7 @@
     <!-- 3. 게임 결과 화면 -->
     <div id="result-overlay" class="overlay" style="display: none;">
         <div id="result-text" class="result-title">VICTORY</div>
-        <p id="result-detail" style="color:#ccc; margin-bottom: 20px;">성적 표시</p>
+        <p id="result-detail" style="color:#ffd700; font-size:1.1rem; font-weight:bold; margin-bottom: 20px;">최종 1승 (+3점)</p>
         
         <button id="rematch-btn" class="btn" onclick="requestRematch()">재대결 신청 (0/3)</button>
         <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444;" onclick="openRoomRankingModal()">🏆 우리 방 순위표 보기</button>
@@ -444,14 +463,14 @@
         <div id="rematch-status" class="rematch-info">상대방의 응답을 기다리는 중...</div>
     </div>
 
-    <!-- 4. 상단 대형 프로필 바 (파랑팀 vs 빨강팀 확실히 구분) -->
+    <!-- 4. 상단 대형 프로필 바 -->
     <div class="header">
         <div class="player-profile blue-team" id="my-profile-card">
             <div style="display: flex; align-items: center; gap: 6px;">
                 <span class="team-badge blue" id="my-team-badge"></span>
                 <span class="big-nickname" id="my-name-display">나</span>
             </div>
-            <span style="font-size:0.8rem; color:#aaa;" id="my-record">(0승 0패)</span>
+            <span style="font-size:0.8rem; color:#aaa;" id="my-record">(0승 0무 0패 / 0점)</span>
         </div>
         <div style="color:var(--accent-gold); font-weight:bold; font-size:0.9rem;" id="room-display">ROOM: -</div>
         <div class="player-profile red-team" id="opp-profile-card">
@@ -473,7 +492,6 @@
     <div class="center-arena" id="arena-box">
         <div class="round-indicator" id="round-title">ROUND 1 / 9</div>
         
-        <!-- 라운드 1~9별 LED 불빛과 미니 패를 한 열로 배치 -->
         <div class="rounds-grid" id="rounds-grid"></div>
 
         <div class="status-message" id="status-msg">카드를 선택해 주세요</div>
@@ -495,8 +513,9 @@
     let roomCode = "";
     let isHost = false;
 
-    let myTeam = "blue"; // 호스트는 파랑팀 기본
-    let myRecord = { win: 0, lose: 0 };
+    let myTeam = "blue";
+    // 성적 데이터: 승, 무, 패, 총 승점(score)
+    let myRecord = { win: 0, draw: 0, lose: 0, score: 0 };
     let rematchCount = 0;
     let myHistoryCards = []; 
 
@@ -507,7 +526,7 @@
     let oppSubmitted = false;
     let oppCardValue = null; 
     
-    let roundResults = []; // 'blue', 'red', 'draw' 저장
+    let roundResults = [];
     let rematchRequested = false;
     let oppRematchReady = false;
     let timerInterval = null;
@@ -538,7 +557,7 @@
 
         peer.on('open', (id) => {
             myId = id;
-            roomRankings[myId] = { nickname: myNickname, win: 0, lose: 0 };
+            roomRankings[myId] = { nickname: myNickname, win: 0, draw: 0, lose: 0, score: 0 };
             attemptConnect(hostId);
         });
 
@@ -666,7 +685,7 @@
     }
 
     function initGame(team, oppName) {
-        myTeam = team; // 'blue' 또는 'red'
+        myTeam = team;
         document.getElementById('opp-name-display').innerText = oppName;
         document.getElementById('waiting-overlay').style.display = 'none';
         document.getElementById('result-overlay').style.display = 'none';
@@ -735,7 +754,6 @@
         }
     }
 
-    /* LED 승패 불빛 색상 (파랑승 = blue-win, 빨강승 = red-win, 무승부 = draw-win) */
     function renderRoundsGrid() {
         const grid = document.getElementById('rounds-grid');
         grid.innerHTML = '';
@@ -791,7 +809,7 @@
 
             const myVal = mySelectedCard;
             const oppVal = oppCardValue;
-            let winnerTeam = null; // 'blue', 'red', 또는 'draw'
+            let winnerTeam = null;
 
             const oppTeam = (myTeam === 'blue') ? 'red' : 'blue';
 
@@ -847,10 +865,9 @@
         setTimeout(() => box.classList.remove('flash-effect'), 600);
     }
 
-    /* 제한 시간 30초 설정 */
     function startTimer() {
         clearInterval(timerInterval);
-        let timeLeft = 30; // 30초로 연장
+        let timeLeft = 30;
         const progress = document.getElementById('timer-progress');
         progress.style.width = '100%';
 
@@ -872,6 +889,7 @@
         }, 1000);
     }
 
+    /* 9라운드 종료 후 최종 승/무/패 판정 및 승점(Score) 산정 */
     function endGame() {
         let myWins = 0, oppWins = 0, draws = 0;
         roundResults.forEach(res => {
@@ -883,23 +901,37 @@
         const title = document.getElementById('result-text');
         const detail = document.getElementById('result-detail');
 
-        if (myWins >= 5) {
+        // [요청 반영] 최종 결과는 오직 1승 / 무승부 / 1패 만 산정 (승 3점, 무 2점, 패 1점)
+        if (myWins > oppWins) {
             title.innerText = "VICTORY";
             title.className = "result-title win";
             myRecord.win++;
-        } else if (oppWins >= 5) {
+            myRecord.score += 3; // 승리 3점
+            detail.innerText = "🎉 최종 1승 획득 (+3점)";
+        } else if (oppWins > myWins) {
             title.innerText = "DEFEAT";
             title.className = "result-title lose";
             myRecord.lose++;
+            myRecord.score += 1; // 패배 1점
+            detail.innerText = "💀 최종 1패 기록 (+1점)";
         } else {
             title.innerText = "DRAW";
             title.className = "result-title draw";
+            myRecord.draw++;
+            myRecord.score += 2; // 무승부 2점
+            detail.innerText = "🤝 최종 무승부 (+2점)";
         }
 
-        document.getElementById('my-record').innerText = `(${myRecord.win}승 ${myRecord.lose}패)`;
-        detail.innerText = `최종 라운드 전적: ${myWins}승 ${draws}무 ${oppWins}패`;
+        document.getElementById('my-record').innerText = `(${myRecord.win}승 ${myRecord.draw}무 ${myRecord.lose}패 / ${myRecord.score}점)`;
 
-        roomRankings[myId] = { nickname: myNickname, win: myRecord.win, lose: myRecord.lose };
+        // 방 랭킹 데이터 전송 및 동기화
+        roomRankings[myId] = { 
+            nickname: myNickname, 
+            win: myRecord.win, 
+            draw: myRecord.draw, 
+            lose: myRecord.lose, 
+            score: myRecord.score 
+        };
         sendData({ type: 'SYNC_RANKINGS', rankings: roomRankings });
 
         const rematchBtn = document.getElementById('rematch-btn');
@@ -933,28 +965,33 @@
         resetBoard();
     }
 
+    /* [요청 반영] 1위~10위 고정 순위표 렌더링 (등록 없으면 비어있는 채 안내) */
     function renderRoomRankingList() {
         const container = document.getElementById('room-ranking-list');
         container.innerHTML = '';
         
-        const sorted = Object.values(roomRankings).sort((a, b) => b.win - a.win);
+        // 승점(score) 기준 내림차순 정렬
+        const sorted = Object.values(roomRankings).sort((a, b) => b.score - a.score);
 
-        if (sorted.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#888; padding:15px;">등록된 전적이 없습니다.</div>';
-            return;
-        }
+        // 무조건 1위부터 10위까지 슬롯 10개를 순서대로 렌더링
+        for (let i = 0; i < 10; i++) {
+            let medal = `${i + 1}위`;
+            if (i === 0) medal = '🥇 1위';
+            else if (i === 1) medal = '🥈 2위';
+            else if (i === 2) medal = '🥉 3위';
 
-        sorted.forEach((p, idx) => {
-            let medal = `${idx + 1}위`;
-            if (idx === 0) medal = '🥇 1위';
-            else if (idx === 1) medal = '🥈 2위';
-            else if (idx === 2) medal = '🥉 3위';
-
+            const player = sorted[i];
             const item = document.createElement('div');
-            item.className = 'ranking-item';
-            item.innerHTML = `<span><strong>${medal}</strong> ${p.nickname}</span><span style="color:var(--accent-gold);">${p.win}승 ${p.lose}패</span>`;
+
+            if (player) {
+                item.className = 'ranking-item';
+                item.innerHTML = `<span><strong>${medal}</strong> ${player.nickname}</span><span style="color:var(--accent-gold); font-weight:bold;">${player.score}점 <small style="color:#888; font-weight:normal;">(${player.win}승 ${player.draw}무 ${player.lose}패)</small></span>`;
+            } else {
+                item.className = 'ranking-item empty';
+                item.innerHTML = `<span><strong>${medal}</strong> -</span><span style="color:#555;">[기록 없음]</span>`;
+            }
             container.appendChild(item);
-        });
+        }
     }
 
     function openRoomRankingModal() {
