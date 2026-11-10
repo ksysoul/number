@@ -468,8 +468,8 @@
 </div>
 
 <script>
-    // 💡 아래 따옴표 안에 본인의 파이어베이스 Realtime Database URL을 입력하세요!
-    const FIREBASE_DB_URL = "[https://num-game-d2ce2-default-rtdb.firebaseio.com/]";
+    // 선생님의 파이어베이스 Realtime Database URL 반영 완료
+    const FIREBASE_DB_URL = "https://num-game-d2ce2-default-rtdb.firebaseio.com/";
 
     const firebaseConfig = {
         databaseURL: FIREBASE_DB_URL
@@ -539,43 +539,11 @@
 
         myQueueRef.onDisconnect().remove();
 
-        // 💡 대기열 진입 시점에 큐를 한 번 읽어서 2명 이상이면 즉시 안전하게 짝짓기 수행
-        queueRef.once('value', (snapshot) => {
-            tryMatch(queueRef);
-        });
-
-        // 대기열에 변화가 생길 때마다 실시간으로 짝짓기 감시
+        // 💡 꼬임 없는 안전하고 확실한 선착순 2명 자동 매칭 로직
         queueRef.on('value', (snapshot) => {
             if (currentMatchId) return;
-            tryMatch(queueRef);
-        });
 
-        // 내가 속한 대전 방(Match) 생성 여부 감시
-        const matchesRef = db.ref(`rooms/${roomCode}/matches`);
-        matchesRef.on('value', (snapshot) => {
-            if (currentMatchId) return;
-
-            const matches = snapshot.val();
-            if (!matches) return;
-
-            for (const matchId in matches) {
-                const match = matches[matchId];
-                if (match.status === 'playing') {
-                    if (match.player1.id === myId || match.player2.id === myId) {
-                        queueRef.child(myId).remove();
-                        startMatch(matchId, match);
-                        break;
-                    }
-                }
-            }
-        });
-
-        updateRankingDataInDB();
-    }
-
-    // 💡 여러 명이 들어와도 꼬이지 않고 선착순 2명씩 정확히 방을 만들어주는 안전 매칭 함수
-    function tryMatch(queueRef) {
-        queueRef.transaction((queueData) => {
+            const queueData = snapshot.val();
             if (!queueData) return;
 
             const users = Object.keys(queueData)
@@ -586,24 +554,52 @@
                 const p1 = users[0];
                 const p2 = users[1];
 
-                const matchId = "match_" + roomCode + "_" + Date.now();
-                db.ref(`rooms/${roomCode}/matches/${matchId}`).set({
-                    player1: { id: p1.id, nickname: p1.nickname, team: 'blue' },
-                    player2: { id: p2.id, nickname: p2.nickname, team: 'red' },
-                    status: 'playing',
-                    round: 1,
-                    p1Card: null,
-                    p2Card: null,
-                    result: null
-                });
-
-                // 큐에서 두 사람 제거
-                delete queueData[p1.id];
-                delete queueData[p2.id];
-                return queueData;
+                // 오직 대기열 리스트의 맨 처음에 있는 사람(p1)이 대표로 방을 만듦
+                if (p1.id === myId) {
+                    const matchId = "match_" + roomCode + "_" + Date.now();
+                    
+                    // 원자적으로 대기열에서 두 사람을 빼내고 방 생성
+                    db.ref(`rooms/${roomCode}/matches/${matchId}`).set({
+                        player1: { id: p1.id, nickname: p1.nickname, team: 'blue' },
+                        player2: { id: p2.id, nickname: p2.nickname, team: 'red' },
+                        status: 'playing',
+                        round: 1,
+                        p1Card: null,
+                        p2Card: null,
+                        result: null
+                    }).then(() => {
+                        queueRef.child(p1.id).remove();
+                        queueRef.child(p2.id).remove();
+                    }).catch((err) => {
+                        console.log("매칭 생성 중 충돌 발생, 재시도");
+                    });
+                }
             }
-            return;
         });
+
+        // 내가 포함된 대전 방 감시
+        const matchesRef = db.ref(`rooms/${roomCode}/matches`);
+        matchesRef.on('value', (snapshot) => {
+            if (currentMatchId) return;
+
+            const matches = snapshot.val();
+            if (!matches) return;
+
+            for (const matchId in matches) {
+                const match = matches[matchId];
+                if (match && match.status === 'playing') {
+                    if (match.player1 && match.player2) {
+                        if (match.player1.id === myId || match.player2.id === myId) {
+                            queueRef.child(myId).remove();
+                            startMatch(matchId, match);
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        updateRankingDataInDB();
     }
 
     function startMatch(matchId, matchData) {
