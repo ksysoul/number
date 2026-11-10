@@ -166,7 +166,7 @@
             color: #555;
         }
 
-        /* 팀 구분이 직관적인 상단 프로필 바 */
+        /* 상단 대형 프로필 바 */
         .header {
             display: flex;
             justify-content: space-between;
@@ -512,9 +512,9 @@
     let myNickname = "";
     let roomCode = "";
     let isHost = false;
+    let gameStarted = false; // 게임 시작 후 매칭 변경 방지용 잠금 플래그
 
     let myTeam = "blue";
-    // 성적 데이터: 승, 무, 패, 총 승점(score)
     let myRecord = { win: 0, draw: 0, lose: 0, score: 0 };
     let rematchCount = 0;
     let myHistoryCards = []; 
@@ -544,6 +544,7 @@
 
         myNickname = nickInput;
         roomCode = codeInput.toLowerCase().trim();
+        gameStarted = false;
 
         document.getElementById('my-name-display').innerText = myNickname;
         document.getElementById('room-display').innerText = `ROOM: ${roomCode}`;
@@ -552,6 +553,10 @@
         document.getElementById('waiting-room-title').innerText = `방 [${roomCode}] 대기실`;
 
         let hostId = "numgame_room_" + roomCode + "_host";
+
+        if (peer) {
+            peer.destroy();
+        }
 
         peer = new Peer(null, { debug: 1 });
 
@@ -562,19 +567,15 @@
         });
 
         peer.on('connection', (incomingConn) => {
+            // 이미 게임이 시작되었거나 다른 사람과 연결된 상태라면 새로운 연결 차단 (매칭 고정)
+            if (gameStarted || conn) {
+                incomingConn.close();
+                return;
+            }
+
             conn = incomingConn;
             isHost = true;
             setupConnection();
-            
-            setTimeout(() => {
-                conn.send({
-                    type: 'START_GAME',
-                    team: 'red',
-                    oppName: myNickname,
-                    rankings: roomRankings
-                });
-                initGame('blue', conn.metadata ? conn.metadata.nickname : "상대방");
-            }, 500);
         });
     }
 
@@ -587,6 +588,7 @@
             conn = trialConn;
             isHost = false;
             setupConnection();
+            conn.send({ type: 'GUEST_INFO', nickname: myNickname, rankings: roomRankings });
         });
 
         trialConn.on('error', (err) => {
@@ -594,13 +596,14 @@
         });
 
         setTimeout(() => {
-            if (!conn && !isHost) {
+            if (!conn && !isHost && !gameStarted) {
                 makeMyselfHost();
             }
         }, 3000);
     }
 
     function makeMyselfHost() {
+        if (gameStarted) return;
         if (peer) peer.destroy();
         let hostId = "numgame_room_" + roomCode + "_host";
         
@@ -611,47 +614,52 @@
         });
 
         peer.on('connection', (incomingConn) => {
+            if (gameStarted || conn) {
+                incomingConn.close();
+                return;
+            }
+
             conn = incomingConn;
             isHost = true;
             setupConnection();
-
-            conn.on('data', (data) => {
-                if (data.type === 'GUEST_INFO') {
-                    document.getElementById('opp-name-display').innerText = data.nickname;
-                    if (data.rankings) roomRankings = { ...roomRankings, ...data.rankings };
-                    
-                    initGame('blue', data.nickname);
-                    conn.send({
-                        type: 'START_GAME',
-                        team: 'red',
-                        oppName: myNickname,
-                        rankings: roomRankings
-                    });
-                }
-            });
         });
     }
 
     function setupConnection() {
         document.getElementById('waiting-overlay').style.display = 'none';
 
-        if (!isHost && conn) {
-            conn.send({ type: 'GUEST_INFO', nickname: myNickname, rankings: roomRankings });
-        }
-
         conn.on('data', (data) => {
             handleNetworkData(data);
         });
 
         conn.on('close', () => {
-            alert("상대방이 방을 나갔습니다.");
-            leaveRoom();
+            // 게임 중이 아닐 때만 연결 끊김 처리
+            if (gameStarted) {
+                alert("상대방과의 연결이 끊겼습니다.");
+            }
         });
     }
 
     function handleNetworkData(data) {
         switch (data.type) {
+            case 'GUEST_INFO':
+                if (gameStarted) return; // 이미 시작됐다면 무시
+                gameStarted = true; // 매칭 잠금
+                document.getElementById('opp-name-display').innerText = data.nickname;
+                if (data.rankings) roomRankings = { ...roomRankings, ...data.rankings };
+                
+                initGame('blue', data.nickname);
+                conn.send({
+                    type: 'START_GAME',
+                    team: 'red',
+                    oppName: myNickname,
+                    rankings: roomRankings
+                });
+                break;
+
             case 'START_GAME':
+                if (gameStarted) return; // 이미 시작됐다면 무시
+                gameStarted = true; // 매칭 잠금
                 document.getElementById('opp-name-display').innerText = data.oppName;
                 if (data.rankings) roomRankings = { ...roomRankings, ...data.rankings };
                 initGame(data.team, data.oppName);
@@ -686,6 +694,7 @@
 
     function initGame(team, oppName) {
         myTeam = team;
+        gameStarted = true;
         document.getElementById('opp-name-display').innerText = oppName;
         document.getElementById('waiting-overlay').style.display = 'none';
         document.getElementById('result-overlay').style.display = 'none';
@@ -889,7 +898,6 @@
         }, 1000);
     }
 
-    /* 9라운드 종료 후 최종 승/무/패 판정 및 승점(Score) 산정 */
     function endGame() {
         let myWins = 0, oppWins = 0, draws = 0;
         roundResults.forEach(res => {
@@ -901,30 +909,28 @@
         const title = document.getElementById('result-text');
         const detail = document.getElementById('result-detail');
 
-        // [요청 반영] 최종 결과는 오직 1승 / 무승부 / 1패 만 산정 (승 3점, 무 2점, 패 1점)
         if (myWins > oppWins) {
             title.innerText = "VICTORY";
             title.className = "result-title win";
             myRecord.win++;
-            myRecord.score += 3; // 승리 3점
+            myRecord.score += 3;
             detail.innerText = "🎉 최종 1승 획득 (+3점)";
         } else if (oppWins > myWins) {
             title.innerText = "DEFEAT";
             title.className = "result-title lose";
             myRecord.lose++;
-            myRecord.score += 1; // 패배 1점
+            myRecord.score += 1;
             detail.innerText = "💀 최종 1패 기록 (+1점)";
         } else {
             title.innerText = "DRAW";
             title.className = "result-title draw";
             myRecord.draw++;
-            myRecord.score += 2; // 무승부 2점
+            myRecord.score += 2;
             detail.innerText = "🤝 최종 무승부 (+2점)";
         }
 
         document.getElementById('my-record').innerText = `(${myRecord.win}승 ${myRecord.draw}무 ${myRecord.lose}패 / ${myRecord.score}점)`;
 
-        // 방 랭킹 데이터 전송 및 동기화
         roomRankings[myId] = { 
             nickname: myNickname, 
             win: myRecord.win, 
@@ -965,15 +971,12 @@
         resetBoard();
     }
 
-    /* [요청 반영] 1위~10위 고정 순위표 렌더링 (등록 없으면 비어있는 채 안내) */
     function renderRoomRankingList() {
         const container = document.getElementById('room-ranking-list');
         container.innerHTML = '';
         
-        // 승점(score) 기준 내림차순 정렬
         const sorted = Object.values(roomRankings).sort((a, b) => b.score - a.score);
 
-        // 무조건 1위부터 10위까지 슬롯 10개를 순서대로 렌더링
         for (let i = 0; i < 10; i++) {
             let medal = `${i + 1}위`;
             if (i === 0) medal = '🥇 1위';
