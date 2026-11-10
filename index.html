@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>숫자심리대결(1-9) - 교실 랜덤 매칭 대전</title>
-    <!-- Firebase SDK 로드 -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <title>숫자심리대결(1-9) - 교실 실시간 대전</title>
+    <!-- 기기 간 실시간 통신을 위한 PeerJS 라이브러리 -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root {
             --bg-color: #121212;
@@ -53,6 +52,7 @@
             border: 1px solid #333;
         }
 
+        /* 오버레이 화면 */
         .overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -128,6 +128,7 @@
             box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
         }
 
+        /* 랭킹 모달 */
         .ranking-info-box {
             font-size: 0.85rem;
             color: #bbb;
@@ -163,6 +164,7 @@
 
         .ranking-item.empty { color: #555; }
 
+        /* 상단 대형 프로필 바 */
         .header {
             display: flex;
             justify-content: space-between;
@@ -214,6 +216,7 @@
         .team-badge.blue { background: #008cff; box-shadow: 0 0 8px #008cff; }
         .team-badge.red { background: #ff3232; box-shadow: 0 0 8px #ff3232; }
 
+        /* 상대방 카드리스트 */
         .opponent-area { text-align: center; padding: 6px 0; }
 
         .cards-row {
@@ -239,6 +242,7 @@
 
         .card-back.used { opacity: 0.2; background: #111; border-color: #222; }
 
+        /* 중앙 아레나 & LED 전광판 */
         .center-arena {
             background: #202026;
             border-radius: 16px;
@@ -336,6 +340,7 @@
             transition: width 1s linear;
         }
 
+        /* 내 패 영역 */
         .my-area { text-align: center; }
 
         .my-cards {
@@ -374,6 +379,14 @@
         .result-title.win { color: #008cff; text-shadow: 0 0 15px rgba(0,140,255,0.5); }
         .result-title.lose { color: #ff3232; text-shadow: 0 0 15px rgba(255,50,50,0.5); }
         .result-title.draw { color: #2ecc71; text-shadow: 0 0 15px rgba(46,204,113,0.5); }
+
+        .rematch-info { font-size: 0.85rem; color: #aaa; margin-top: 8px; }
+
+        @keyframes flash {
+            0% { background-color: rgba(255, 215, 0, 0.8); }
+            100% { background-color: rgba(18, 18, 18, 0.96); }
+        }
+        .flash-effect { animation: flash 0.6s ease-out; }
     </style>
 </head>
 <body>
@@ -382,7 +395,7 @@
     <!-- 1. 로비 / 방 입장 화면 -->
     <div id="lobby-overlay" class="overlay">
         <h1 class="title">숫자심리대결(1-9)</h1>
-        <p class="subtitle">교실 랜덤 매칭 대전</p>
+        <p class="subtitle">교실 실시간 1:1 대전</p>
 
         <div class="input-group">
             <input type="text" id="nickname-input" placeholder="내 닉네임 입력 (예: 홍길동)" maxlength="8">
@@ -392,16 +405,16 @@
             <input type="text" id="room-code-input" placeholder="방 코드(반 번호) 입력 (예: 63)" maxlength="10">
         </div>
 
-        <button class="btn" onclick="enterLobby()">대기실 입장하기</button>
+        <button class="btn" onclick="enterRoom()">방 들어가기 / 대기하기</button>
     </div>
 
     <!-- 2. 대기실 화면 -->
     <div id="waiting-overlay" class="overlay" style="display: none;">
-        <h2 class="title" style="font-size: 1.6rem;" id="waiting-room-title">대기실</h2>
-        <p class="subtitle" id="waiting-status-text">상대방을 찾는 중입니다...</p>
+        <h2 class="title" style="font-size: 1.6rem;" id="waiting-room-title">방 대기실</h2>
+        <p class="subtitle" id="waiting-status-text">상대방이 들어오기를 기다리는 중...</p>
         <div style="font-size: 2rem; margin: 15px 0;">⏳</div>
         <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444; margin-bottom: 10px;" onclick="openRoomRankingModal()">🏆 우리 방 순위표 보기</button>
-        <button class="btn" style="background:#444; color:#fff; margin-top:0;" onclick="leaveGame()">나가기</button>
+        <button class="btn" style="background:#444; color:#fff; margin-top:0;" onclick="leaveRoom()">나가기</button>
     </div>
 
     <!-- 우리 방 전용 TOP 10 랭킹 모달 -->
@@ -420,9 +433,10 @@
         <div id="result-text" class="result-title">VICTORY</div>
         <p id="result-detail" style="color:#ffd700; font-size:1.1rem; font-weight:bold; margin-bottom: 20px;">최종 1승 (+3점)</p>
         
-        <button class="btn" onclick="returnToWaitingRoom()">🔄 다음 상대와 랜덤 매칭 대기</button>
+        <button id="rematch-btn" class="btn" onclick="requestRematch()">재대결 신청 (0/3)</button>
         <button class="btn" style="background: #25252b; color: var(--accent-gold); border: 1px solid #444;" onclick="openRoomRankingModal()">🏆 우리 방 순위표 보기</button>
-        <button class="btn" style="background: linear-gradient(135deg, #008cff, #0059b3); color:#fff;" onclick="leaveGame()">게임 종료 및 나가기</button>
+        <button class="btn" style="background: linear-gradient(135deg, #008cff, #0059b3); color:#fff;" onclick="leaveRoom()">방 나가기</button>
+        <div id="rematch-status" class="rematch-info">상대방의 응답을 기다리는 중...</div>
     </div>
 
     <!-- 4. 상단 대형 프로필 바 -->
@@ -468,37 +482,34 @@
 </div>
 
 <script>
-    // 선생님의 파이어베이스 Realtime Database URL 반영 완료
-    const FIREBASE_DB_URL = "https://num-game-d2ce2-default-rtdb.firebaseio.com/";
-
-    const firebaseConfig = {
-        databaseURL: FIREBASE_DB_URL
-    };
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.database();
-
-    let myId = "user_" + Math.random().toString(36).substring(2, 9);
+    let peer = null;
+    let conn = null;
+    let myId = "";
     let myNickname = "";
     let roomCode = "";
+    let isHost = false;
+    let gameStarted = false;
+
     let myTeam = "blue";
     let myRecord = { win: 0, draw: 0, lose: 0, score: 0 };
-    
-    let currentMatchId = null;
-    let matchRef = null;
-    let myHistoryCards = [];
+    let rematchCount = 0;
+    let myHistoryCards = []; 
 
     let currentRound = 1;
-    let myCardsUsed = Array(10).fill(false);
+    let myCardsUsed = Array(10).fill(false); 
     let oppCardsLeft = 9;
     let mySelectedCard = null;
     let oppSubmitted = false;
-    let oppCardValue = null;
+    let oppCardValue = null; 
+    
     let roundResults = [];
+    let rematchRequested = false;
+    let oppRematchReady = false;
     let timerInterval = null;
 
-    function enterLobby() {
+    let roomRankings = {}; 
+
+    function enterRoom() {
         const nickInput = document.getElementById('nickname-input').value.trim();
         const codeInput = document.getElementById('room-code-input').value.trim();
 
@@ -509,127 +520,155 @@
 
         myNickname = nickInput;
         roomCode = codeInput.toLowerCase().trim();
+        gameStarted = false;
 
         document.getElementById('my-name-display').innerText = myNickname;
         document.getElementById('room-display').innerText = `ROOM: ${roomCode}`;
         document.getElementById('lobby-overlay').style.display = 'none';
-        
-        updateMyRecordDisplay();
-        enterWaitingRoom();
-    }
-
-    function enterWaitingRoom() {
-        currentMatchId = null;
-        if (matchRef) matchRef.off();
-
-        document.getElementById('result-overlay').style.display = 'none';
         document.getElementById('waiting-overlay').style.display = 'flex';
         document.getElementById('waiting-room-title').innerText = `방 [${roomCode}] 대기실`;
-        document.getElementById('waiting-status-text').innerText = "상대방을 찾는 중입니다...";
 
-        const queueRef = db.ref(`rooms/${roomCode}/queue`);
-        const myQueueRef = queueRef.child(myId);
-        
-        myQueueRef.set({
-            id: myId,
-            nickname: myNickname,
-            score: myRecord.score,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
+        let hostId = "numgame_room_" + roomCode + "_host";
+
+        if (peer) {
+            peer.destroy();
+        }
+
+        peer = new Peer(null, { debug: 1 });
+
+        peer.on('open', (id) => {
+            myId = id;
+            roomRankings[myId] = { nickname: myNickname, win: 0, draw: 0, lose: 0, score: 0 };
+            attemptConnect(hostId);
         });
 
-        myQueueRef.onDisconnect().remove();
-
-        // 💡 꼬임 없는 안전하고 확실한 선착순 2명 자동 매칭 로직
-        queueRef.on('value', (snapshot) => {
-            if (currentMatchId) return;
-
-            const queueData = snapshot.val();
-            if (!queueData) return;
-
-            const users = Object.keys(queueData)
-                .map(key => ({ id: key, ...queueData[key] }))
-                .sort((a, b) => a.timestamp - b.timestamp);
-
-            if (users.length >= 2) {
-                const p1 = users[0];
-                const p2 = users[1];
-
-                // 오직 대기열 리스트의 맨 처음에 있는 사람(p1)이 대표로 방을 만듦
-                if (p1.id === myId) {
-                    const matchId = "match_" + roomCode + "_" + Date.now();
-                    
-                    // 원자적으로 대기열에서 두 사람을 빼내고 방 생성
-                    db.ref(`rooms/${roomCode}/matches/${matchId}`).set({
-                        player1: { id: p1.id, nickname: p1.nickname, team: 'blue' },
-                        player2: { id: p2.id, nickname: p2.nickname, team: 'red' },
-                        status: 'playing',
-                        round: 1,
-                        p1Card: null,
-                        p2Card: null,
-                        result: null
-                    }).then(() => {
-                        queueRef.child(p1.id).remove();
-                        queueRef.child(p2.id).remove();
-                    }).catch((err) => {
-                        console.log("매칭 생성 중 충돌 발생, 재시도");
-                    });
-                }
+        peer.on('connection', (incomingConn) => {
+            if (gameStarted || conn) {
+                incomingConn.close();
+                return;
             }
+
+            conn = incomingConn;
+            isHost = true;
+            setupConnection();
         });
-
-        // 내가 포함된 대전 방 감시
-        const matchesRef = db.ref(`rooms/${roomCode}/matches`);
-        matchesRef.on('value', (snapshot) => {
-            if (currentMatchId) return;
-
-            const matches = snapshot.val();
-            if (!matches) return;
-
-            for (const matchId in matches) {
-                const match = matches[matchId];
-                if (match && match.status === 'playing') {
-                    if (match.player1 && match.player2) {
-                        if (match.player1.id === myId || match.player2.id === myId) {
-                            queueRef.child(myId).remove();
-                            startMatch(matchId, match);
-                            break;
-                        }
-                    }
-                }
-            }
-        });
-
-        updateRankingDataInDB();
     }
 
-    function startMatch(matchId, matchData) {
-        currentMatchId = matchId;
-        matchRef = db.ref(`rooms/${roomCode}/matches/${matchId}`);
+    function attemptConnect(hostId) {
+        let trialConn = peer.connect(hostId, {
+            metadata: { nickname: myNickname }
+        });
 
-        const isP1 = (matchData.player1.id === myId);
-        myTeam = isP1 ? matchData.player1.team : matchData.player2.team;
-        const oppInfo = isP1 ? matchData.player2 : matchData.player1;
+        trialConn.on('open', () => {
+            conn = trialConn;
+            isHost = false;
+            setupConnection();
+            conn.send({ type: 'GUEST_INFO', nickname: myNickname, rankings: roomRankings });
+        });
 
+        trialConn.on('error', (err) => {
+            makeMyselfHost();
+        });
+
+        setTimeout(() => {
+            if (!conn && !isHost && !gameStarted) {
+                makeMyselfHost();
+            }
+        }, 3000);
+    }
+
+    function makeMyselfHost() {
+        if (gameStarted) return;
+        if (peer) peer.destroy();
+        let hostId = "numgame_room_" + roomCode + "_host";
+        
+        peer = new Peer(hostId, { debug: 1 });
+        peer.on('open', (id) => {
+            isHost = true;
+            document.getElementById('waiting-status-text').innerText = "방을 개설했습니다! 상대방을 기다리는 중...";
+        });
+
+        peer.on('connection', (incomingConn) => {
+            if (gameStarted || conn) {
+                incomingConn.close();
+                return;
+            }
+
+            conn = incomingConn;
+            isHost = true;
+            setupConnection();
+        });
+    }
+
+    function setupConnection() {
         document.getElementById('waiting-overlay').style.display = 'none';
-        initGame(myTeam, oppInfo.nickname);
 
-        matchRef.on('value', (snapshot) => {
-            const m = snapshot.val();
-            if (!m) return;
+        conn.on('data', (data) => {
+            handleNetworkData(data);
+        });
 
-            const oppCard = isP1 ? m.p2Card : m.p1Card;
-
-            if (oppCard !== null && oppCard !== undefined) {
-                oppSubmitted = true;
-                oppCardValue = oppCard;
-                document.getElementById('opp-status-text').innerText = "상대방 제출 완료!";
-                checkRoundResultSync(m);
+        conn.on('close', () => {
+            if (gameStarted) {
+                alert("상대방과의 연결이 끊겼습니다.");
             }
         });
+    }
+
+    function handleNetworkData(data) {
+        switch (data.type) {
+            case 'GUEST_INFO':
+                if (gameStarted) return;
+                gameStarted = true;
+                document.getElementById('opp-name-display').innerText = data.nickname;
+                if (data.rankings) roomRankings = { ...roomRankings, ...data.rankings };
+                
+                initGame('blue', data.nickname);
+                conn.send({
+                    type: 'START_GAME',
+                    team: 'red',
+                    oppName: myNickname,
+                    rankings: roomRankings
+                });
+                break;
+
+            case 'START_GAME':
+                if (gameStarted) return;
+                gameStarted = true;
+                document.getElementById('opp-name-display').innerText = data.oppName;
+                if (data.rankings) roomRankings = { ...roomRankings, ...data.rankings };
+                initGame(data.team, data.oppName);
+                break;
+
+            case 'SUBMIT_CARD':
+                oppSubmitted = true;
+                oppCardValue = data.cardValue;
+                document.getElementById('opp-status-text').innerText = "상대방 제출 완료!";
+                checkRoundEnd();
+                break;
+
+            case 'REMATCH_READY':
+                oppRematchReady = true;
+                document.getElementById('rematch-status').innerText = "상대방이 재대결을 수락했습니다!";
+                if (rematchRequested && oppRematchReady) {
+                    startRematch();
+                }
+                break;
+
+            case 'SYNC_RANKINGS':
+                roomRankings = data.rankings;
+                break;
+        }
+    }
+
+    function sendData(data) {
+        if (conn && conn.open) {
+            conn.send(data);
+        }
     }
 
     function initGame(team, oppName) {
         myTeam = team;
+        gameStarted = true;
         document.getElementById('opp-name-display').innerText = oppName;
         document.getElementById('waiting-overlay').style.display = 'none';
         document.getElementById('result-overlay').style.display = 'none';
@@ -663,6 +702,8 @@
         mySelectedCard = null;
         oppSubmitted = false;
         oppCardValue = null;
+        rematchRequested = false;
+        oppRematchReady = false;
 
         document.getElementById('result-overlay').style.display = 'none';
         document.getElementById('status-msg').innerText = "카드를 선택해 주세요";
@@ -732,7 +773,7 @@
     }
 
     function selectCard(num) {
-        if (mySelectedCard !== null || !matchRef) return;
+        if (mySelectedCard !== null) return;
 
         mySelectedCard = num;
         myCardsUsed[num] = true;
@@ -741,20 +782,16 @@
         renderRoundsGrid();
 
         document.getElementById('status-msg').innerText = "상대방 대기 중...";
-
-        const isP1 = document.getElementById('my-profile-card').classList.contains('blue-team') === (myTeam === 'blue');
-        matchRef.child(isP1 ? 'p1Card' : 'p2Card').set(num);
+        sendData({ type: 'SUBMIT_CARD', cardValue: num });
+        checkRoundEnd();
     }
 
-    function checkRoundResultSync(matchData) {
-        if (matchData.p1Card !== null && matchData.p1Card !== undefined && 
-            matchData.p2Card !== null && matchData.p2Card !== undefined) {
-            
+    function checkRoundEnd() {
+        if (mySelectedCard !== null && oppSubmitted) {
             clearInterval(timerInterval);
 
-            const isP1 = (matchData.player1.id === myId);
-            const myVal = isP1 ? matchData.p1Card : matchData.p2Card;
-            const oppVal = isP1 ? matchData.p2Card : matchData.p1Card;
+            const myVal = mySelectedCard;
+            const oppVal = oppCardValue;
             let winnerTeam = null;
 
             const oppTeam = (myTeam === 'blue') ? 'red' : 'blue';
@@ -786,36 +823,21 @@
 
             renderRoundsGrid();
 
-            if (isP1) {
-                setTimeout(() => {
-                    if (currentRound < 9) {
-                        matchRef.update({
-                            round: currentRound + 1,
-                            p1Card: null,
-                            p2Card: null
-                        });
-                    } else {
-                        matchRef.update({ status: 'ended' });
-                        endGameLocally();
-                    }
-                }, 1800);
-            } else {
-                setTimeout(() => {
-                    if (currentRound < 9) {
-                        currentRound++;
-                        mySelectedCard = null;
-                        oppSubmitted = false;
-                        oppCardValue = null;
-                        document.getElementById('status-msg').innerText = "카드를 선택해 주세요";
-                        document.getElementById('opp-status-text').innerText = "상대방 고민 중...";
-                        renderCards();
-                        renderRoundsGrid();
-                        startTimer();
-                    } else {
-                        endGameLocally();
-                    }
-                }, 1800);
-            }
+            setTimeout(() => {
+                if (currentRound < 9) {
+                    currentRound++;
+                    mySelectedCard = null;
+                    oppSubmitted = false;
+                    oppCardValue = null;
+                    document.getElementById('status-msg').innerText = "카드를 선택해 주세요";
+                    document.getElementById('opp-status-text').innerText = "상대방 고민 중...";
+                    renderCards();
+                    renderRoundsGrid();
+                    startTimer();
+                } else {
+                    endGame();
+                }
+            }, 1800);
         }
     }
 
@@ -850,7 +872,7 @@
         }, 1000);
     }
 
-    function endGameLocally() {
+    function endGame() {
         let myWins = 0, oppWins = 0, draws = 0;
         roundResults.forEach(res => {
             if (res === myTeam) myWins++;
@@ -881,59 +903,72 @@
             detail.innerText = "🤝 최종 무승부 (+2점)";
         }
 
-        updateMyRecordDisplay();
-        updateRankingDataInDB();
+        document.getElementById('my-record').innerText = `(${myRecord.win}승 ${myRecord.draw}무 ${myRecord.lose}패 / ${myRecord.score}점)`;
+
+        roomRankings[myId] = { 
+            nickname: myNickname, 
+            win: myRecord.win, 
+            draw: myRecord.draw, 
+            lose: myRecord.lose, 
+            score: myRecord.score 
+        };
+        sendData({ type: 'SYNC_RANKINGS', rankings: roomRankings });
+
+        const rematchBtn = document.getElementById('rematch-btn');
+        rematchBtn.innerText = `재대결 신청 (${rematchCount}/3)`;
+        if (rematchCount >= 3) {
+            rematchBtn.disabled = true;
+            rematchBtn.style.opacity = '0.5';
+            document.getElementById('rematch-status').innerText = "최대 재대결 횟수(3회) 초과";
+        } else {
+            rematchBtn.disabled = false;
+            rematchBtn.style.opacity = '1';
+            document.getElementById('rematch-status').innerText = "";
+        }
 
         document.getElementById('result-overlay').style.display = 'flex';
     }
 
-    function updateMyRecordDisplay() {
-        document.getElementById('my-record').innerText = `(${myRecord.win}승 ${myRecord.draw}무 ${myRecord.lose}패 / ${myRecord.score}점)`;
+    function requestRematch() {
+        if (rematchCount >= 3) return;
+        rematchRequested = true;
+        document.getElementById('rematch-status').innerText = "재대결 신청 완료! 상대방 수락 대기 중...";
+        sendData({ type: 'REMATCH_READY' });
+
+        if (rematchRequested && oppRematchReady) {
+            startRematch();
+        }
     }
 
-    function updateRankingDataInDB() {
-        if (!roomCode) return;
-        db.ref(`rooms/${roomCode}/rankings/${myId}`).set({
-            nickname: myNickname,
-            win: myRecord.win,
-            draw: myRecord.draw,
-            lose: myRecord.lose,
-            score: myRecord.score
-        });
-    }
-
-    function returnToWaitingRoom() {
-        enterWaitingRoom();
+    function startRematch() {
+        rematchCount++;
+        resetBoard();
     }
 
     function renderRoomRankingList() {
         const container = document.getElementById('room-ranking-list');
-        container.innerHTML = '<div style="text-align:center; color:#888; padding:15px;">순위 불러오는 중...</div>';
+        container.innerHTML = '';
+        
+        const sorted = Object.values(roomRankings).sort((a, b) => b.score - a.score);
 
-        db.ref(`rooms/${roomCode}/rankings`).once('value', (snapshot) => {
-            container.innerHTML = '';
-            const data = snapshot.val();
-            const rankings = data ? Object.values(data).sort((a, b) => b.score - a.score) : [];
+        for (let i = 0; i < 10; i++) {
+            let medal = `${i + 1}위`;
+            if (i === 0) medal = '🥇 1위';
+            else if (i === 1) medal = '🥈 2위';
+            else if (i === 2) medal = '🥉 3위';
 
-            for (let i = 0; i < 10; i++) {
-                let medal = `${i + 1}위`;
-                if (i === 0) medal = '🥇 1위';
-                else if (i === 1) medal = '🥈 2위';
-                else if (i === 2) medal = '🥉 3위';
+            const player = sorted[i];
+            const item = document.createElement('div');
 
-                const player = rankings[i];
-                const item = document.createElement('div');
-
-                if (player) {
-                    item.className = 'ranking-item';
-                    item.innerHTML = `<span><strong>${medal}</strong> ${player.nickname}</span><span style="color:var(--accent-gold); font-weight:bold;">${player.score}점 <small style="color:#888; font-weight:normal;">(${player.win}승 ${player.draw}무 ${player.lose}패)</small></span>`;
-                } else {
-                    item.className = 'ranking-item empty';
-                    item.innerHTML = `<span><strong>${medal}</strong> -</span><span style="color:#555;">[기록 없음]</span>`;
-                }
-                container.appendChild(item);
+            if (player) {
+                item.className = 'ranking-item';
+                item.innerHTML = `<span><strong>${medal}</strong> ${player.nickname}</span><span style="color:var(--accent-gold); font-weight:bold;">${player.score}점 <small style="color:#888; font-weight:normal;">(${player.win}승 ${player.draw}무 ${player.lose}패)</small></span>`;
+            } else {
+                item.className = 'ranking-item empty';
+                item.innerHTML = `<span><strong>${medal}</strong> -</span><span style="color:#555;">[기록 없음]</span>`;
             }
-        });
+            container.appendChild(item);
+        }
     }
 
     function openRoomRankingModal() {
@@ -945,9 +980,8 @@
         document.getElementById('room-ranking-overlay').style.display = 'none';
     }
 
-    function leaveGame() {
-        if (matchRef) matchRef.off();
-        db.ref(`rooms/${roomCode}/queue/${myId}`).remove();
+    function leaveRoom() {
+        if (peer) peer.destroy();
         document.location.reload();
     }
 </script>
